@@ -1,2 +1,2 @@
 # cwtch
-A chess engine writtne in C.
+A chess engine written in C.
