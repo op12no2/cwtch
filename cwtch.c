@@ -1,5 +1,5 @@
 
-#define BUILD "1"
+#define BUILD "2"
 
 /*{{{  includes*/
 
@@ -1389,14 +1389,7 @@ void update_piece_to_history(const Position *const pos, const uint32_t move, con
   const int from_piece = pos->board[from];
   const int idx        = from_piece << 6 | to;
 
-  assert(from < 64 && "piece_to_history: from out of bounds+");
-  assert(to < 64 && "piece_to_history: to out of bounds+");
-  assert(idx < (12*64) && "piece_to_history: idx out of bounds+");
-  assert(idx >= 0 && "piece_to_history: idx out of bounds-");
-
   piece_to_history[idx] += bonus - piece_to_history[idx] * abs(bonus) / MAX_HISTORY;
-
-  //printf("%d ", piece_to_history[idx]);
 
 }
 
@@ -4001,9 +3994,13 @@ int search(const int ply, int depth, int alpha, const int beta) {
 
     /*{{{  prune*/
     
-    if (!is_pv && !in_check && depth <= 4 && num_legal_moves > 1 && (move & MASK_PRUNING) && (ev + depth * 120) < alpha) {
+    if (!is_pv && !in_check && alpha > -MATE_LIMIT && (move & MASK_PRUNING)) {
     
-      continue;
+      if (num_legal_moves > depth && (ev + depth * depth * 50 + 100) < alpha) {
+    
+        continue;
+    
+      }
     
     }
     
