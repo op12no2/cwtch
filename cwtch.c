@@ -1,5 +1,5 @@
 
-#define BUILD "3"
+#define BUILD "4"
 
 /*{{{  includes*/
 
@@ -3777,7 +3777,6 @@ int qsearch(const int ply, int alpha, const int beta) {
   
   uint32_t tt_move = 0;
   
-  /* hack - increases bench and loses elo - why?
   if (entry) {
   
     const int flags = entry->flags;
@@ -3788,7 +3787,6 @@ int qsearch(const int ply, int alpha, const int beta) {
     }
   
   }
-  */
   
   if (entry && entry->move) {
   
@@ -3953,7 +3951,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
 
   /*{{{  beta prune*/
   
-  if (!is_pv && !in_check && depth <= 8 && (ev - depth * 100) >= (beta - improving *50)) {
+  if (!is_pv && !in_check && depth <= 8 && (ev - depth * 100) >= (beta - improving * 50)) {
   
     return ev;
   
