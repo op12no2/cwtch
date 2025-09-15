@@ -1,5 +1,5 @@
 
-#define BUILD "2"
+#define BUILD "3"
 
 /*{{{  includes*/
 
@@ -3335,7 +3335,7 @@ void play_move(Node *const node, char *uci_move) {
     if (!strcmp(uci_move, buf)) {
       make_move_pre(pos, move);
       make_move_post(pos, move);
-      lazy.net_func(node);
+      net_update_accs(node);
       return;
     }
   }
@@ -3931,12 +3931,15 @@ int search(const int ply, int depth, int alpha, const int beta) {
   
   }
   
-  //hackif (!is_root && is_pv && !tt_move && depth > 9) {
+  /*}}}*/
+  /*{{{  iir*/
+  /*
+  if (!is_root && is_pv && !tt_move && depth > 9) {
   
-  //  depth--;  // https://www.talkchess.com/forum3/viewtopic.php?f=7&t=74769
+    depth--;  // https://www.talkchess.com/forum3/viewtopic.php?f=7&t=74769
   
-  //}
-  
+  }
+  */
   /*}}}*/
 
   Node *const RESTRICT next_node = &ss[ply + 1];
@@ -3944,13 +3947,13 @@ int search(const int ply, int depth, int alpha, const int beta) {
   const int orig_alpha           = alpha;
   const int ev                   = eval(this_node);
   this_node->ev                  = ev;
-  const int improving            = (is_root) ? 0 : !!(ev > ss[ply-1].ev);
+  const int improving            = ply < 2 ? 0 : (ev > ss[ply-1].ev && ev > ss[ply-2].ev);
   int r                          = 0;
   int e                          = 0;
 
   /*{{{  beta prune*/
   
-  if (!is_pv && !in_check && depth <= 8 && (ev - depth * 100) >= beta) {
+  if (!is_pv && !in_check && depth <= 8 && (ev - depth * 100) >= (beta - improving *50)) {
   
     return ev;
   
@@ -4123,13 +4126,17 @@ int search(const int ply, int depth, int alpha, const int beta) {
 
   }
 
-  /*{{{  mate or stalemate*/
+
+  /*{{{  only one more*/
   
   if (is_root && num_legal_moves == 1) {
   
     tc.finished = 1;
   
   }
+  
+  /*}}}*/
+  /*{{{  mate or slatemate*/
   
   if (num_legal_moves == 0) {
   
