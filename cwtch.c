@@ -1890,30 +1890,33 @@ HOT int is_attacked(const Position *const pos, const int sq, const int opp) {
 
 void gen_pawns_white_quiet(Node *const node) {
 
-  const Position *const pos = &node->pos;
-  const uint64_t pawns    = pos->all[WPAWN];
-  const uint64_t occupied = pos->occupied;
+  const Position *const pos  = &node->pos;
+  const uint64_t pawns       = pos->all[WPAWN];
+  const uint64_t occupied    = pos->occupied;
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
+  int n                      = 0;
 
   /*{{{  push 1*/
   
   const uint64_t one = (pawns << 8) & ~occupied;
-  uint64_t quiet = one & ~RANK_8;
-  uint64_t promo = one &  RANK_8;
+  uint64_t quiet     = one & ~RANK_8;
+  uint64_t promo     = one &  RANK_8;
   
   while (quiet) {
     const int to = bsf(quiet); quiet &= quiet - 1;
-    m[n++] = encode_move(to - 8, to, MASK_PAWN_MOVE);
+    m[n++]       = encode_move(to - 8, to, MASK_PAWN_MOVE);
   }
   
   while (promo) {
-    const int to = bsf(promo); promo &= promo - 1;
+  
+    const int to   = bsf(promo); promo &= promo - 1;
     const int from = to - 8;
+  
     m[n++] = encode_move(from, to, MASK_Q_PROMO_PUSH);
     m[n++] = encode_move(from, to, MASK_R_PROMO_PUSH);
     m[n++] = encode_move(from, to, MASK_B_PROMO_PUSH);
     m[n++] = encode_move(from, to, MASK_N_PROMO_PUSH);
+  
   }
   
   /*}}}*/
@@ -1937,11 +1940,11 @@ void gen_pawns_white_quiet(Node *const node) {
 
 void gen_pawns_white_noisy(Node *const node) {
 
-  const Position *const pos = &node->pos;
-  const uint64_t pawns    = pos->all[WPAWN];
-  const uint64_t enemies  = pos->colour[BLACK];
+  const Position *const pos  = &node->pos;
+  const uint64_t pawns       = pos->all[WPAWN];
+  const uint64_t enemies     = pos->colour[BLACK];
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
+  int n                      = 0;
 
   /*{{{  captures*/
   
@@ -1957,12 +1960,15 @@ void gen_pawns_white_noisy(Node *const node) {
   }
   
   while (promo) {
-    int to = bsf(promo); promo &= promo - 1;
+  
+    int to         = bsf(promo); promo &= promo - 1;
     const int from = to - 7;
+  
     m[n++] = encode_move(from, to, MASK_Q_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_R_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_B_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_N_PROMO_CAPTURE);
+  
   }
   
   cap   = right & ~RANK_8;
@@ -1970,16 +1976,19 @@ void gen_pawns_white_noisy(Node *const node) {
   
   while (cap) {
     const int to = bsf(cap); cap &= cap - 1;
-    m[n++] = encode_move(to - 9, to, FLAG_CAPTURE);
+    m[n++]       = encode_move(to - 9, to, FLAG_CAPTURE);
   }
   
   while (promo) {
-    const int to = bsf(promo); promo &= promo - 1;
+  
+    const int to   = bsf(promo); promo &= promo - 1;
     const int from = to - 9;
+  
     m[n++] = encode_move(from, to, MASK_Q_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_R_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_B_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_N_PROMO_CAPTURE);
+  
   }
   
   /*}}}*/
@@ -1991,7 +2000,7 @@ void gen_pawns_white_noisy(Node *const node) {
   
     while (ep_from) {
       const int from = bsf(ep_from); ep_from &= ep_from - 1;
-      m[n++] = encode_move(from, pos->ep, MASK_EP_CAPTURE);
+      m[n++]         = encode_move(from, pos->ep, MASK_EP_CAPTURE);
     }
   
   }
@@ -2008,30 +2017,33 @@ void gen_pawns_white_noisy(Node *const node) {
 
 void gen_pawns_black_quiet(Node *const node) {
 
-  const Position *const pos = &node->pos;
-  const uint64_t pawns    = pos->all[BPAWN];
-  const uint64_t occupied = pos->occupied;
+  const Position *const pos  = &node->pos;
+  const uint64_t pawns       = pos->all[BPAWN];
+  const uint64_t occupied    = pos->occupied;
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
+  int n                      = 0;
 
   /*{{{  push 1*/
   
   const uint64_t one = (pawns >> 8) & ~occupied;
-  uint64_t quiet = one & ~RANK_1;
-  uint64_t promo = one &  RANK_1;
+  uint64_t quiet     = one & ~RANK_1;
+  uint64_t promo     = one &  RANK_1;
   
   while (quiet) {
     const int to = bsf(quiet); quiet &= quiet - 1;
-    m[n++] = encode_move(to + 8, to, MASK_PAWN_MOVE);
+    m[n++]       = encode_move(to + 8, to, MASK_PAWN_MOVE);
   }
   
   while (promo) {
-    const int to = bsf(promo); promo &= promo - 1;
+  
+    const int to   = bsf(promo); promo &= promo - 1;
     const int from = to + 8;
+  
     m[n++] = encode_move(from, to, MASK_Q_PROMO_PUSH);
     m[n++] = encode_move(from, to, MASK_R_PROMO_PUSH);
     m[n++] = encode_move(from, to, MASK_B_PROMO_PUSH);
     m[n++] = encode_move(from, to, MASK_N_PROMO_PUSH);
+  
   }
   
   /*}}}*/
@@ -2055,11 +2067,11 @@ void gen_pawns_black_quiet(Node *const node) {
 
 void gen_pawns_black_noisy(Node *const node) {
 
-  const Position *const pos = &node->pos;
-  const uint64_t pawns    = pos->all[BPAWN];
-  const uint64_t enemies  = pos->colour[WHITE];
+  const Position *const pos  = &node->pos;
+  const uint64_t pawns       = pos->all[BPAWN];
+  const uint64_t enemies     = pos->colour[WHITE];
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
+  int n                      = 0;
 
   /*{{{  captures*/
   
@@ -2071,16 +2083,19 @@ void gen_pawns_black_noisy(Node *const node) {
   
   while (cap) {
     const int to = bsf(cap); cap &= cap - 1;
-    m[n++] = encode_move(to + 9, to, MASK_PAWN_CAPTURE);
+    m[n++]       = encode_move(to + 9, to, MASK_PAWN_CAPTURE);
   }
   
   while (promo) {
-    const int to = bsf(promo); promo &= promo - 1;
+  
+    const int to   = bsf(promo); promo &= promo - 1;
     const int from = to + 9;
+  
     m[n++] = encode_move(from, to, MASK_Q_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_R_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_B_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_N_PROMO_CAPTURE);
+  
   }
   
   cap   = right & ~RANK_1;
@@ -2088,16 +2103,19 @@ void gen_pawns_black_noisy(Node *const node) {
   
   while (cap) {
     const int to = bsf(cap); cap &= cap - 1;
-    m[n++] = encode_move(to + 7, to, FLAG_CAPTURE);
+    m[n++]       = encode_move(to + 7, to, FLAG_CAPTURE);
   }
   
   while (promo) {
-    const int to = bsf(promo); promo &= promo - 1;
+  
+    const int to   = bsf(promo); promo &= promo - 1;
     const int from = to + 7;
+  
     m[n++] = encode_move(from, to, MASK_Q_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_R_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_B_PROMO_CAPTURE);
     m[n++] = encode_move(from, to, MASK_N_PROMO_CAPTURE);
+  
   }
   
   /*}}}*/
@@ -2109,7 +2127,7 @@ void gen_pawns_black_noisy(Node *const node) {
   
     while (ep_from) {
       const int from = bsf(ep_from); ep_from &= ep_from - 1;
-      m[n++] = encode_move(from, pos->ep, MASK_EP_CAPTURE);
+      m[n++]         = encode_move(from, pos->ep, MASK_EP_CAPTURE);
     }
   
   }
@@ -2141,23 +2159,22 @@ void gen_pawns_noisy(Node *const node) {
 
 void gen_jumpers(Node *const node, const uint64_t *const attack_table, const int piece, const uint64_t targets, const uint32_t flag) {
 
-  const Position *const pos = &node->pos;
-  const int stm = pos->stm;
-
+  const Position *const pos  = &node->pos;
+  const int stm              = pos->stm;
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
-
-  uint64_t bb = pos->all[piece_index(piece, stm)];
+  int n                      = 0;
+  uint64_t bb                = pos->all[piece_index(piece, stm)];
 
   while (bb) {
 
-    const int from = bsf(bb); bb &= bb - 1;
+    const int from   = bsf(bb); bb &= bb - 1;
     uint64_t attacks = attack_table[from] & targets;
 
     while (attacks) {
       const int to = bsf(attacks); attacks &= attacks - 1;
-      m[n++] = encode_move(from, to, flag);
+      m[n++]       = encode_move(from, to, flag);
     }
+
   }
 
   node->num_moves += n;
@@ -2169,28 +2186,26 @@ void gen_jumpers(Node *const node, const uint64_t *const attack_table, const int
 
 void gen_sliders(Node *const node, const Attack *const RESTRICT attack_table, const int piece, const uint64_t targets, const uint32_t flag) {
 
-  const Position *const pos = &node->pos;
-  const int stm = pos->stm;
-  const uint64_t occ = pos->occupied;
-
+  const Position *const pos  = &node->pos;
+  const int stm              = pos->stm;
+  const uint64_t occ         = pos->occupied;
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
-
-  uint64_t bb = pos->all[piece_index(piece, stm)];
+  int n                      = 0;
+  uint64_t bb                = pos->all[piece_index(piece, stm)];
 
   while (bb) {
 
-    const int from = bsf(bb); bb &= bb - 1;
+    const int from                 = bsf(bb); bb &= bb - 1;
     const Attack *const RESTRICT a = &attack_table[from];
-    const uint64_t blockers = occ & a->mask;
-    const int index = magic_index(blockers, a->magic, a->shift);
-
-    uint64_t attacks = a->attacks[index] & targets;
+    const uint64_t blockers        = occ & a->mask;
+    const int index                = magic_index(blockers, a->magic, a->shift);
+    uint64_t attacks               = a->attacks[index] & targets;
 
     while (attacks) {
       const int to = bsf(attacks); attacks &= attacks - 1;
-      m[n++] = encode_move(from, to, flag);
+      m[n++]       = encode_move(from, to, flag);
     }
+
   }
 
   node->num_moves += n;
@@ -2202,14 +2217,13 @@ void gen_sliders(Node *const node, const Attack *const RESTRICT attack_table, co
 
 void gen_castling(Node *const node) {
 
-  const Position *const pos = &node->pos;
-  const int stm = pos->stm;
-  const int opp = stm ^ 1;
-  const uint8_t rights = pos->rights;
-  const uint64_t occupied = pos->occupied;
-
+  const Position *const pos  = &node->pos;
+  const int stm              = pos->stm;
+  const int opp              = stm ^ 1;
+  const uint8_t rights       = pos->rights;
+  const uint64_t occupied    = pos->occupied;
   uint32_t *const RESTRICT m = node->moves + node->num_moves;
-  int n = 0;
+  int n                      = 0;
 
   if (stm == WHITE) {
 
@@ -2265,16 +2279,11 @@ void gen_noisy(Node *const node) {
   const uint64_t enemies       = pos->colour[opp] & ~opp_king_bb;
 
   gen_pawns_noisy(node);
-
-  gen_jumpers(node, knight_attacks, KNIGHT, enemies, FLAG_CAPTURE);
-
-  gen_sliders(node, bishop_attacks, BISHOP, enemies, FLAG_CAPTURE);
-
-  gen_sliders(node, rook_attacks,   ROOK,   enemies, FLAG_CAPTURE);
-
-  gen_sliders(node, bishop_attacks, QUEEN,  enemies, FLAG_CAPTURE);
-  gen_sliders(node, rook_attacks,   QUEEN,  enemies, FLAG_CAPTURE);
-
+  gen_jumpers(node, knight_attacks, KNIGHT, enemies,                  FLAG_CAPTURE);
+  gen_sliders(node, bishop_attacks, BISHOP, enemies,                  FLAG_CAPTURE);
+  gen_sliders(node, rook_attacks,   ROOK,   enemies,                  FLAG_CAPTURE);
+  gen_sliders(node, bishop_attacks, QUEEN,  enemies,                  FLAG_CAPTURE);
+  gen_sliders(node, rook_attacks,   QUEEN,  enemies,                  FLAG_CAPTURE);
   gen_jumpers(node, king_attacks,   KING,   enemies & ~opp_king_near, FLAG_CAPTURE);
 
 }
@@ -2292,16 +2301,11 @@ void gen_quiet(Node *const node) {
   const uint64_t opp_king_near = king_attacks[bsf(opp_king_bb)];
 
   gen_pawns_quiet(node);
-
-  gen_jumpers(node, knight_attacks, KNIGHT, ~occ, FLAG_MOVE);
-
-  gen_sliders(node, bishop_attacks, BISHOP, ~occ, FLAG_MOVE);
-
-  gen_sliders(node, rook_attacks,   ROOK,   ~occ, FLAG_MOVE);
-
-  gen_sliders(node, bishop_attacks, QUEEN,  ~occ, FLAG_MOVE);
-  gen_sliders(node, rook_attacks,   QUEEN,  ~occ, FLAG_MOVE);
-
+  gen_jumpers(node, knight_attacks, KNIGHT, ~occ,                  FLAG_MOVE);
+  gen_sliders(node, bishop_attacks, BISHOP, ~occ,                  FLAG_MOVE);
+  gen_sliders(node, rook_attacks,   ROOK,   ~occ,                  FLAG_MOVE);
+  gen_sliders(node, bishop_attacks, QUEEN,  ~occ,                  FLAG_MOVE);
+  gen_sliders(node, rook_attacks,   QUEEN,  ~occ,                  FLAG_MOVE);
   gen_jumpers(node, king_attacks,   KING,   ~occ & ~opp_king_near, FLAG_MOVE);
 
   if (node->pos.rights && !node->in_check)
@@ -4125,7 +4129,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
   }
 
 
-  /*{{{  only one more*/
+  /*{{{  only one move*/
   
   if (is_root && num_legal_moves == 1) {
   
