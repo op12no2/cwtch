@@ -1,8 +1,10 @@
 # Cwtch
-A chess engine written in C. UCI protocol. Reads/writes stdin/stdout. Needs a chess user interface to operate within.
+A chess engine written in C. UCI protocol. Reads/writes stdin/stdout. Use a chess user interface to play against it.
 
 WIP
 
+Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently OK under Linux and MSYS32 UCRT32 on Windows.  See latest commit for correct bench available via ```./cwtch bench q```.
 
+Single threaded, no ```stop``` command.
 
-
+The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
