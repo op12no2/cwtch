@@ -5,7 +5,7 @@ WIP
 
 Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently OK under Linux and MSYS32 UCRT32 on Windows.  See latest commit for correct bench available via ```./cwtch bench q```.
 
-Single threaded, no ```stop``` command.
+Single threaded. No ```stop``` command.
 
 The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
