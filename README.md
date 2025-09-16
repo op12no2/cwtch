@@ -3,7 +3,7 @@ A chess engine written in C. UCI protocol. Reads/writes stdin/stdout. Use a ches
 
 WIP
 
-Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently OK under Linux and MSYS32 UCRT32 on Windows.  See latest commit for correct bench available via ```./cwtch bench q```.
+Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently compiles OK under Linux and MSYS32 UCRT32 on Windows.  See latest commit for correct bench available via ```./cwtch bench q```.
 
 Single threaded. No ```stop``` command.
 
