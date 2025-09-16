@@ -8,3 +8,27 @@ Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently OK un
 Single threaded, no ```stop``` command.
 
 The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
+
+## Command Extensions
+
+```
+bench - display a cumulative node count for a colleciton of searches.
+
+eval - display the current evaluation.
+
+perft n - perform a PERFT search to depth n.
+
+board - display the current board.
+
+hash - display TT info.
+
+draw - is the current board in a drawn state?
+
+pt - perform a series of PERFT searches.
+
+et - perform a series of eval tests.
+
+quit
+```
+
+
