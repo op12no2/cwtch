@@ -1,5 +1,5 @@
 
-#define BUILD "4"
+#define BUILD "5"
 
 /*{{{  includes*/
 
@@ -3981,6 +3981,19 @@ int search(const int ply, int depth, int alpha, const int beta) {
       return 0;
   
     this_node->pv_len = 0;
+  
+  }
+  
+  /*}}}*/
+  /*{{{  alpha prune*/
+  
+  if (!is_root && !in_check && depth <= 4 && alpha > -MATE_LIMIT && ev + 500 * depth <= alpha) {
+  
+    const int score = qsearch(ply, alpha, alpha + 1);
+  
+    if (score <= alpha) {
+      return score;
+    }
   
   }
   
