@@ -1,5 +1,5 @@
 
-#define BUILD "5"
+#define BUILD "6"
 
 /*{{{  includes*/
 
@@ -486,7 +486,7 @@ const Bench bench_data[] = {
 
 /*}}}*/
 
-int16_t piece_to_history[12*64];
+int16_t piece_to_history[12][64];
 
 TT *tt = NULL;
 size_t tt_entries = 0;
@@ -1380,6 +1380,19 @@ HOT void update_hash_history(const Position *const pos, const int ply) {
 
 /*}}}*/
 
+/*{{{  age_piece_to_history*/
+
+void age_piece_to_history() {
+
+  for (int i=0; i < 12; i++) {
+    for (int j=0; j < 64; j++) {
+      piece_to_history[i][j] /= 2;
+    }
+  }
+
+}
+
+/*}}}*/
 /*{{{  update_piece_to_history*/
 
 void update_piece_to_history(const Position *const pos, const uint32_t move, const int16_t bonus) {
@@ -1387,9 +1400,8 @@ void update_piece_to_history(const Position *const pos, const uint32_t move, con
   const int from       = (move >> 6) & 0x3F;
   const int to         = move & 0x3F;
   const int from_piece = pos->board[from];
-  const int idx        = from_piece << 6 | to;
 
-  piece_to_history[idx] += bonus - piece_to_history[idx] * abs(bonus) / MAX_HISTORY;
+  piece_to_history[from_piece][to] += bonus - piece_to_history[from_piece][to] * abs(bonus) / MAX_HISTORY;
 
 }
 
@@ -1401,11 +1413,10 @@ int see(const Position *const pos, const uint32_t move);
 
 void rank_noisy(Node *const node) {
 
-  const uint8_t *const board = node->pos.board;
+  const uint8_t *const board  = node->pos.board;
   const uint32_t *const moves = node->moves;
-  int16_t *const ranks = node->ranks;
-
-  const int n = node->num_moves;
+  int16_t *const ranks        = node->ranks;
+  const int n                 = node->num_moves;
 
   for (int i=0; i < n; i++) {
 
@@ -1413,8 +1424,8 @@ void rank_noisy(Node *const node) {
     const int from     = (m >> 6) & 0x3F;
     const int to       =  m & 0x3F;
     const int attacker = board[from] % 6;
+    int victim         = board[to];
 
-    int victim = board[to];
     if (victim == EMPTY)  // ep
       victim = 0;
     else
@@ -1430,22 +1441,19 @@ void rank_noisy(Node *const node) {
 
 void rank_quiet(Node *const node) {
 
-  const uint8_t *const board = node->pos.board;
+  const uint8_t *const board  = node->pos.board;
   const uint32_t *const moves = node->moves;
-  int16_t *const ranks = node->ranks;
-
-  const int n = node->num_moves;
+  int16_t *const ranks        = node->ranks;
+  const int n                 = node->num_moves;
 
   for (int i=0; i < n; i++) {
 
-    const uint32_t move = moves[i];
-
-    const int from = (move >> 6) & 0x3F;
-    const int to   = move & 0x3F;
-
+    const uint32_t move  = moves[i];
+    const int from       = (move >> 6) & 0x3F;
+    const int to         = move & 0x3F;
     const int from_piece = board[from];
 
-    ranks[i] = piece_to_history[from_piece << 6 | to];
+    ranks[i] = piece_to_history[from_piece][to];
 
   }
 }
@@ -1636,7 +1644,7 @@ void init_bishop_attacks(void) {
 
   uint64_t blockers[MAGIC_MAX_SLOTS];
 
-  for (int sq = 0; sq < 64; sq++) {
+  for (int sq=0; sq < 64; sq++) {
 
     Attack *a = &bishop_attacks[sq];
 
@@ -1661,9 +1669,9 @@ void init_bishop_attacks(void) {
     
     /*}}}*/
 
-    a->bits = popcount(a->mask);
-    a->shift = 64 - a->bits;
-    a->count = 1 << a->bits;
+    a->bits    = popcount(a->mask);
+    a->shift   = 64 - a->bits;
+    a->count   = 1 << a->bits;
     a->attacks = &raw_attacks[next_attack_index];
 
     get_blockers(a, blockers);
@@ -1672,7 +1680,7 @@ void init_bishop_attacks(void) {
       /*{{{  build attacks[next_attack_index]*/
       
       uint64_t blocker = blockers[i];
-      uint64_t attack = 0;
+      uint64_t attack  = 0;
       
       for (int r = rank + 1, f = file + 1; r <= 7 && f <= 7; r++, f++) {
         int s = r * 8 + f;
@@ -1721,7 +1729,7 @@ void init_rook_attacks(void) {
 
   uint64_t blockers[MAGIC_MAX_SLOTS];
 
-  for (int sq = 0; sq < 64; sq++) {
+  for (int sq=0; sq < 64; sq++) {
 
     Attack *a = &rook_attacks[sq];
 
@@ -1746,9 +1754,9 @@ void init_rook_attacks(void) {
     
     /*}}}*/
 
-    a->bits = popcount(a->mask);
-    a->shift = 64 - a->bits;
-    a->count = 1 << a->bits;
+    a->bits    = popcount(a->mask);
+    a->shift   = 64 - a->bits;
+    a->count   = 1 << a->bits;
     a->attacks = &raw_attacks[next_attack_index];
 
     get_blockers(a, blockers);
@@ -1757,7 +1765,7 @@ void init_rook_attacks(void) {
       /*{{{  build attacks[next_attack_index]*/
       
       uint64_t blocker = blockers[i];
-      uint64_t attack = 0;
+      uint64_t attack  = 0;
       
       for (int r = rank + 1; r <= 7; r++) {
         int s = r * 8 + file;
@@ -2327,7 +2335,7 @@ void remove_tt_move(Node *const node) {
 
   int n = node->num_moves;
 
-  for (int i = 0; i < n; i++, src++) {
+  for (int i=0; i < n; i++, src++) {
 
     if (*src == node->tt_move)
       node->num_moves--;
@@ -2342,15 +2350,13 @@ void remove_tt_move(Node *const node) {
 
 INLINE_HOT uint32_t get_next_sorted_move(Node *const node) {
 
-  uint32_t max_m;
-
+  uint32_t max_m        = 0;
   uint32_t *const moves = node->moves;
-  int16_t *const ranks = node->ranks;
-  const int next = node->next_move;
-  const int num  = node->num_moves;
-
-  int16_t max_r = INT16_MIN;
-  int max_i     = 0;
+  int16_t *const ranks  = node->ranks;
+  const int next        = node->next_move;
+  const int num         = node->num_moves;
+  int16_t max_r         = INT16_MIN;  // must be < -MAX_HISTORY
+  int max_i             = 0;
 
   for (int i=next; i < num; i++) {
     if (ranks[i] > max_r) {
@@ -2399,8 +2405,6 @@ HOT uint32_t get_next_search_move(Node *const node) {
       
       if (node->tt_move)
         return node->tt_move;
-      
-      /* fall through */
       
       /*}}}*/
     }
@@ -2500,8 +2504,6 @@ HOT uint32_t get_next_qsearch_move(Node *const node) {
       
       if (node->tt_move)
         return node->tt_move;
-      
-      /* fall through */
       
       /*}}}*/
     }
@@ -3282,7 +3284,7 @@ void init_zob(void) {
   for (int i=0; i < 64; i++)
     zob_ep[i] = rand64();
 
-  zob_ep[0] = 0;
+  zob_ep[0]     = 0;
   zob_rights[0] = 0;
 
 }
@@ -3381,8 +3383,8 @@ void position(Node *const node, const char *board_fen, const char *stm_str, cons
     else {
   
       int colour = !!islower(*p);
-      int piece = char_to_piece[tolower(*p)];  // 0-5
-      int index = piece_index(piece, colour);  // 0-11
+      int piece  = char_to_piece[tolower(*p)];  // 0-5
+      int index  = piece_index(piece, colour);  // 0-11
   
       uint64_t bb = 1ULL << sq;
   
@@ -4241,6 +4243,8 @@ void go(void) {
     if (tc.finished)
       break;
 
+    age_piece_to_history();
+
   }
 
   format_move(tc.bm, bm_str);
@@ -4255,8 +4259,8 @@ void bench (void) {
 
   ucinewgame();
 
-  const int num_fens = 50;
-  uint64_t start_ms = now_ms();
+  const int num_fens   = 50;
+  uint64_t start_ms    = now_ms();
   uint64_t total_nodes = 0;
 
   for (int i=0; i < num_fens; i++) {
@@ -4266,8 +4270,9 @@ void bench (void) {
     printf("%s %s %s %s\n", b->fen, b->stm, b->rights, b->ep);
     position(&ss[0], b->fen, b->stm, b->rights, b->ep, 0, NULL);
 
-    tc = (TimeControl){0};
+    tc           = (TimeControl){0};
     tc.max_depth = 12;
+
     go();
 
     total_nodes += tc.nodes;
@@ -4355,10 +4360,10 @@ uint64_t perft(const int ply, const int depth) {
 
 void perft_tests (void) {
 
-  const int num_tests = 65;
-  uint64_t start_ms = now_ms();
+  const int num_tests  = 65;
+  uint64_t start_ms    = now_ms();
   uint64_t total_nodes = 0;
-  int errors = 0;
+  int errors           = 0;
 
   for (int i=0; i < num_tests; i++) {
 
@@ -4367,7 +4372,7 @@ void perft_tests (void) {
     position(&ss[0], p->fen, p->stm, p->rights, p->ep, 0, NULL);
 
     uint64_t num_nodes = perft(0, p->depth);
-    total_nodes += num_nodes;
+    total_nodes        += num_nodes;
 
     if (num_nodes != p->expected)
       errors += 1;
