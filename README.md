@@ -16,11 +16,13 @@ bench - display a cumulative node count for a colleciton of searches.
 
 eval - display the current evaluation.
 
-perft n - perform a PERFT search to depth n.
+perft <n> - perform a PERFT search to depth <n>.
 
 board - display the current board.
 
 hash - display TT info.
+
+see <threshold> - display see_ge(<threshold>)
 
 draw - is the current board in a drawn state?
 
