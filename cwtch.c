@@ -1,5 +1,5 @@
 
-#define BUILD "6"
+#define BUILD "7"
 
 /*{{{  includes*/
 
@@ -4123,9 +4123,13 @@ int search(const int ply, int depth, int alpha, const int beta) {
       
         for (int i=0; i < limit; i++) {
       
-          assert(move != this_node->moves[i] && "search: last move in limit");
+          const uint32_t pmove = this_node->moves[i];
       
-          update_piece_to_history(this_pos, this_node->moves[i], -bonus);
+          assert(move != pmove && "search: last move in limit");
+      
+          if (pmove & MASK_PIECE_TO_HISTORY) {
+            update_piece_to_history(this_pos, pmove, -bonus);
+          }
       
         }
       
@@ -4142,7 +4146,6 @@ int search(const int ply, int depth, int alpha, const int beta) {
     /*}}}*/
 
   }
-
 
   /*{{{  only one move*/
   
