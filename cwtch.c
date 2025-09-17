@@ -1,5 +1,5 @@
 
-#define BUILD "8"
+#define BUILD "9"
 
 /*{{{  includes*/
 
@@ -325,6 +325,10 @@ TimeControl tc;
 Lazy lazy;
 HashHistory hh;
 
+ALIGN64 TT *tt    = NULL;
+size_t tt_entries = 0;
+size_t tt_mask    = 0;
+
 ALIGN64 uint64_t zob_pieces[12 * 64];
 ALIGN64 uint64_t zob_stm;
 ALIGN64 uint64_t zob_rights[16];
@@ -336,21 +340,10 @@ ALIGN64 int32_t net_h1_b[NET_H1_SIZE];
 ALIGN64 int32_t net_o_w [NET_H1_SIZE * 2];
 int32_t net_o_b;
 
+const int see_values[12] = {100, 325, 325, 500, 1000, 0, 100, 325, 325, 500, 1000, 0};
 const int orth_offset[2] = {8, -8};
-
-const int rook_to[64] = {
-  [G1] = F1,
-  [C1] = D1,
-  [G8] = F8,
-  [C8] = D8,
-};
-
-const int rook_from[64] = {
-  [G1] = H1,
-  [C1] = A1,
-  [G8] = H8,
-  [C8] = A8,
-};
+const int rook_to[64]    = {[G1] = F1, [C1] = D1, [G8] = F8, [C8] = D8};
+const int rook_from[64]  = {[G1] = H1, [C1] = A1, [G8] = H8, [C8] = A8};
 
 int rights_masks[64];
 
@@ -486,11 +479,12 @@ const Bench bench_data[] = {
 
 /*}}}*/
 
-int16_t piece_to_history[12][64];
+ALIGN64 int16_t piece_to_history[12][64];
 
-TT *tt = NULL;
-size_t tt_entries = 0;
-size_t tt_mask = 0;
+ALIGN64 uint64_t rank_mask[64];
+ALIGN64 uint64_t file_mask[64];
+ALIGN64 uint64_t diag_mask[64];
+ALIGN64 uint64_t anti_mask[64];
 
 /*}}}*/
 
@@ -717,6 +711,39 @@ uint32_t create_move(const char *str) {
   const int to_sq   = square_from_str(str + 2);
 
   return ((uint32_t)from_sq << 6) | (uint32_t)to_sq;
+
+}
+
+/*}}}*/
+/*{{{  init_line_masks*/
+
+void init_line_masks(void) {
+
+  for (int sq=0; sq < 64; sq++) {
+
+    int r       = sq >> 3;
+    int f       = sq & 7;
+    uint64_t rm = 0;
+    uint64_t fm = 0;
+    uint64_t dm = 0;
+    uint64_t am = 0;
+
+    for (int k=0; k < 8; k++) {
+      rm |= 1ULL << (r * 8 + k);     // same rank
+      fm |= 1ULL << (k * 8 + f);     // same file
+    }
+
+    for (int rr=r+1, ff=f+1; rr<8  && ff<8;  rr++, ff++) dm |= 1ULL << (rr*8+ff);
+    for (int rr=r-1, ff=f-1; rr>=0 && ff>=0; rr--, ff--) dm |= 1ULL << (rr*8+ff);
+    for (int rr=r+1, ff=f-1; rr<8  && ff>=0; rr++, ff--) am |= 1ULL << (rr*8+ff);
+    for (int rr=r-1, ff=f+1; rr>=0 && ff<8;  rr--, ff++) am |= 1ULL << (rr*8+ff);
+
+    rank_mask[sq] = rm;
+    file_mask[sq] = fm;
+    diag_mask[sq] = dm;
+    anti_mask[sq] = am;
+
+  }
 
 }
 
@@ -3581,11 +3608,9 @@ INLINE_HOT void pos_copy(const Position *const from_pos, Position *const to_pos)
 /*}}}*/
 /*{{{  see*/
 
-const int see_values[12] = {100, 325, 325, 500, 1000, 0, 100, 325, 325, 500, 1000, 0};
+/*{{{  get_least_valuable_piece*/
 
-/*{{{  helpers*/
-
-INLINE_HOT uint64_t get_least_valuable_piece(const Position *const pos, const uint64_t attadef, const int by_side, int *piece) {
+uint64_t get_least_valuable_piece(const Position *const pos, const uint64_t attadef, const int by_side, int *piece) {
 
   const int base = by_side ? 6 : 0;
 
@@ -3604,45 +3629,44 @@ INLINE_HOT uint64_t get_least_valuable_piece(const Position *const pos, const ui
 
 }
 
-INLINE_HOT int same_file(const int a, const int b) {
-  return (a & 7) == (b & 7);
-}
+/*}}}*/
+/*{{{  rook_attackers_to*/
 
-INLINE_HOT int same_rank(const int a, const int b) {
-  return (a >> 3) == (b >> 3);
-}
+uint64_t rook_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
 
-INLINE_HOT int same_diag(const int a, const int b) {
-  int af = a & 7, ar = a >> 3, bf = b & 7, br = b >> 3;
-  return (af - ar) == (bf - br);
-}
-
-INLINE_HOT int same_anti(const int a, const int b) {
-  int af = a & 7, ar = a >> 3, bf = b & 7, br = b >> 3;
-  return (af + ar) == (bf + br);
-}
-
-INLINE_HOT uint64_t rook_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
   const Attack *const RESTRICT a = &rook_attacks[to_sq];
-  uint64_t rays = a->attacks[magic_index(occ & a->mask, a->magic, a->shift)];
+  uint64_t rays                  = a->attacks[magic_index(occ & a->mask, a->magic, a->shift)];
+
   return rays & (pos->all[ROOK] | pos->all[6+ROOK] | pos->all[QUEEN] | pos->all[6+QUEEN]);
+
 }
 
-INLINE_HOT uint64_t bishop_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
+/*}}}*/
+/*{{{  bishop_attackers_to*/
+
+uint64_t bishop_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
+
   const Attack *const RESTRICT a = &bishop_attacks[to_sq];
-  uint64_t rays = a->attacks[magic_index(occ & a->mask, a->magic, a->shift)];
+  uint64_t rays                  = a->attacks[magic_index(occ & a->mask, a->magic, a->shift)];
+
   return rays & (pos->all[BISHOP] | pos->all[6+BISHOP] | pos->all[QUEEN] | pos->all[6+QUEEN]);
+
 }
 
-INLINE_HOT uint64_t static_attackers_to(const Position *const pos, const int to_sq) {
+/*}}}*/
+/*{{{  static_attackers_to*/
+
+uint64_t static_attackers_to(const Position *const pos, const int to_sq) {
 
   uint64_t attackers = 0ULL;
 
   const uint64_t kn = knight_attacks[to_sq];
+
   attackers |= pos->all[KNIGHT]   & kn;
   attackers |= pos->all[6+KNIGHT] & kn;
 
   const uint64_t k = king_attacks[to_sq];
+
   attackers |= pos->all[KING]   & k;
   attackers |= pos->all[6+KING] & k;
 
@@ -3656,7 +3680,7 @@ INLINE_HOT uint64_t static_attackers_to(const Position *const pos, const int to_
 /*}}}*/
 /*{{{  see_ge*/
 
-HOT int see_ge(const Position *const pos, const uint32_t move, int threshold) {
+int see_ge(const Position *const pos, const uint32_t move, int threshold) {
 
   if (!(move & FLAG_CAPTURE))
     return 1;
@@ -3670,10 +3694,9 @@ HOT int see_ge(const Position *const pos, const uint32_t move, int threshold) {
   if (see_values[target] - see_values[attacker_piece] >= threshold)
     return 1;
 
-  uint64_t used      = 0ULL;
-  uint64_t occ       = pos->occupied;
-  uint64_t from_set  = 1ULL << from_sq;
-
+  uint64_t used           = 0ULL;
+  uint64_t occ            = pos->occupied;
+  uint64_t from_set       = 1ULL << from_sq;
   const uint64_t stat_atk = static_attackers_to(pos, to_sq);
   uint64_t rook_atk       = rook_attackers_to(pos, occ, to_sq);
   uint64_t bish_atk       = bishop_attackers_to(pos, occ, to_sq);
@@ -3686,6 +3709,7 @@ HOT int see_ge(const Position *const pos, const uint32_t move, int threshold) {
   gain[0] = see_values[target] - threshold;
 
   do {
+
     d++;
     gain[d] = see_values[attacker_piece] - gain[d-1];
 
@@ -3696,12 +3720,12 @@ HOT int see_ge(const Position *const pos, const uint32_t move, int threshold) {
     attadef ^= from_set;
     occ     ^= from_set;
 
-    int moved_sq = bsf(from_set);
+    const uint64_t moved_bb = from_set;
 
-    if (same_rank(moved_sq, to_sq) || same_file(moved_sq, to_sq))
+    if (moved_bb & (rank_mask[to_sq] | file_mask[to_sq]))
       rook_atk = rook_attackers_to(pos, occ, to_sq);
 
-    if (same_diag(moved_sq, to_sq) || same_anti(moved_sq, to_sq))
+    if (moved_bb & (diag_mask[to_sq] | anti_mask[to_sq]))
       bish_atk = bishop_attackers_to(pos, occ, to_sq);
 
     attadef  = (stat_atk | rook_atk | bish_atk) & ~used;
@@ -4413,6 +4437,7 @@ int init_once(void) {
 
   uint64_t start_ms = now_ms();
 
+  init_line_masks();
   init_move_funcs();
   init_rights_masks();
   init_zob();
