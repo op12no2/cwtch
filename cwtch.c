@@ -851,7 +851,7 @@ int init_tt(size_t megabytes) {
   const size_t bytes = megabytes * 1024ULL * 1024ULL;
 
   tt_entries = bytes / sizeof(TT);
-  tt_entries = 1ULL << (64 - __builtin_clzll(tt_entries));
+  tt_entries = 1ULL << (63 - __builtin_clzll(tt_entries));
   tt_mask    = tt_entries - 1;
   tt         = calloc(tt_entries, sizeof(TT));
 
@@ -860,7 +860,7 @@ int init_tt(size_t megabytes) {
     return 1;
   }
 
-  printf("info tt entries %zu\n", tt_entries);
+  printf("info tt entries %zu (%zu MB)\n", tt_entries, (tt_entries * sizeof(TT)) / 1024 / 1024);
 
   return 0;
 
@@ -914,6 +914,9 @@ void tt_put(const Position *const pos, const uint8_t flags, const uint8_t depth,
 
   const size_t idx         = pos->hash & tt_mask;
   TT *const RESTRICT entry = &tt[idx];
+
+  if (entry->flags && entry->hash == pos->hash && entry->depth > depth)
+    return;
 
   entry->depth = depth;
   entry->score = score;
