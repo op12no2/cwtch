@@ -1,5 +1,5 @@
 
-#define BUILD "7"
+#define BUILD "8"
 
 /*{{{  includes*/
 
@@ -3977,7 +3977,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
     const int score = -search(ply+1, depth-1-r, -beta, -beta+1);
   
     if (score >= beta)
-      return score;
+      return score > MATE_LIMIT ? beta : score;
   
     if (tc.finished)
       return 0;
