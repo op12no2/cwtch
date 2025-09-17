@@ -22,8 +22,6 @@ board - display the current board.
 
 hash - display TT info.
 
-see <threshold> - display see_ge(<threshold>)
-
 draw - is the current board in a drawn state?
 
 pt - perform a series of PERFT searches.
