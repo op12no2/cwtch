@@ -1,5 +1,5 @@
 
-#define BUILD "9"
+#define BUILD "10"
 
 /*{{{  includes*/
 
@@ -3743,6 +3743,17 @@ int see_ge(const Position *const pos, const uint32_t move, int threshold) {
 /*}}}*/
 
 /*}}}*/
+/*{{{  is_pawn_endgame*/
+
+int is_pawn_endgame(const Position *const pos) {
+
+  const uint64_t *const a = pos->all;
+
+  return pos->occupied == (a[WKING] | a[WPAWN] | a[BKING] | a[BPAWN]);
+
+}
+
+/*}}}*/
 
 /*}}}*/
 /*{{{  search*/
@@ -3990,7 +4001,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
   /*}}}*/
   /*{{{  nmp*/
   
-  if (!is_pv && !in_check && depth > 2 && ev > beta) {
+  if (!is_pv && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(this_pos)) {
   
     r = 3;
   
