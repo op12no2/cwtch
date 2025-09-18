@@ -1,5 +1,6 @@
 
-#define BUILD "12"
+#define VERSION "1"
+#define BUILD "14"
 
 /*{{{  includes*/
 
@@ -738,12 +739,13 @@ void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t m
   if (max_nodes < 0) max_nodes = 0;
   if (move_time < 0) move_time = 0;
   if (moves_to_go < 0) moves_to_go = 0;
+  if (max_depth < 0) max_depth = 0;
 
   tc = (TimeControl){0};
 
   int stm = ss[0].pos.stm;
 
-  if (!max_nodes && !max_depth && !wtime && !winc && !btime && !binc )
+  if (!max_nodes && !max_depth && !wtime && !winc && !btime && !binc && !move_time)
     move_time = 100;
 
   if (!moves_to_go)
@@ -853,7 +855,7 @@ void tt_reset(void) {
 /*}}}*/
 /*{{{  tt_put_adjusted_score*/
 
-int16_t tt_put_adjusted_score(const int ply, const int16_t score) {
+int tt_put_adjusted_score(const int ply, const int score) {
 
   if (score < -MATE_LIMIT)
     return score - ply;
@@ -869,7 +871,7 @@ int16_t tt_put_adjusted_score(const int ply, const int16_t score) {
 /*}}}*/
 /*{{{  tt_get_adjusted_score*/
 
-int16_t tt_get_adjusted_score(const int ply, const int16_t score) {
+int tt_get_adjusted_score(const int ply, const int score) {
 
   if (score < -MATE_LIMIT)
     return score + ply;
@@ -885,7 +887,7 @@ int16_t tt_get_adjusted_score(const int ply, const int16_t score) {
 /*}}}*/
 /*{{{  tt_put*/
 
-void tt_put(const Position *const pos, const uint8_t flags, const uint8_t depth, const int16_t score, const move_t move) {
+void tt_put(const Position *const pos, const int flags, const int depth, const int score, const move_t move) {
 
   const size_t idx         = pos->hash & tt_mask;
   TT *const RESTRICT entry = &tt[idx];
@@ -1140,7 +1142,7 @@ INLINE_HOT void net_update_accs(Node *const node) {
 /*}}}*/
 /*{{{  net_eval*/
 
-HOT int32_t net_eval(Node *const node) {
+HOT int net_eval(Node *const node) {
 
   const int stm = node->pos.stm;
 
@@ -1879,15 +1881,15 @@ HOT int is_attacked(const Position *const pos, const int sq, const int opp) {
 
   {
     const Attack *const RESTRICT a = &bishop_attacks[sq];
-    const uint64_t blockers = pos->occupied & a->mask;
-    const uint64_t attacks  = a->attacks[magic_index(blockers, a->magic, a->shift)];
+    const uint64_t blockers        = pos->occupied & a->mask;
+    const uint64_t attacks         = a->attacks[magic_index(blockers, a->magic, a->shift)];
     if (attacks & opp_bq) return 1;
   }
 
   {
     const Attack *const RESTRICT a = &rook_attacks[sq];
-    const uint64_t blockers = pos->occupied & a->mask;
-    const uint64_t attacks  = a->attacks[magic_index(blockers, a->magic, a->shift)];
+    const uint64_t blockers        = pos->occupied & a->mask;
+    const uint64_t attacks         = a->attacks[magic_index(blockers, a->magic, a->shift)];
     if (attacks & opp_rq) return 1;
   }
 
@@ -3819,8 +3821,6 @@ int qsearch(const int ply, int alpha, const int beta) {
   
   const TT *const RESTRICT entry = tt_get(this_pos);
   
-  move_t tt_move = 0;
-  
   if (entry) {
   
     const int flags = entry->flags;
@@ -3832,11 +3832,7 @@ int qsearch(const int ply, int alpha, const int beta) {
   
   }
   
-  if (entry && entry->move) {
-  
-    tt_move = probably_legal(this_pos, entry->move);
-  
-  }
+  const move_t tt_move = entry ? probably_legal(this_pos, entry->move) : 0;
   
   /*}}}*/
 
@@ -3954,8 +3950,6 @@ int search(const int ply, int depth, int alpha, const int beta) {
   
   const TT *const RESTRICT entry = tt_get(this_pos);
   
-  move_t tt_move = 0;
-  
   if (!is_pv && entry && entry->depth >= depth) {
   
     const int flags = entry->flags;
@@ -3967,11 +3961,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
   
   }
   
-  if (entry && entry->move) {
-  
-    tt_move = probably_legal(this_pos, entry->move);
-  
-  }
+  const move_t tt_move = entry ? probably_legal(this_pos, entry->move) : 0;
   
   /*}}}*/
   /*{{{  iir*/
@@ -4596,12 +4586,13 @@ int uci_tokens(int num_tokens, char **tokens) {
         t++;
         moves_to_go = atoi(tokens[t]);
       }
-      else if (!strcmp(token, "infinite")) {
-        max_depth = MAX_PLY;
-      }
     
       t++;
     
+    }
+    
+    if (num_tokens == 2 && !strcmp(tokens[1], "infinite")) {
+      max_depth = MAX_PLY;
     }
     
     /*}}}*/
@@ -4622,7 +4613,7 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "uci")) {
     /*{{{  uci*/
     
-    printf("id name Cwtch %s\n", BUILD);
+    printf("id name Cwtch %s\n", VERSION);
     printf("id author Colin Jenkins\n");
     printf("option name Hash type spin default %d min 1 max 1024\n", TT_DEFAULT);
     printf("uciok\n");
@@ -4719,7 +4710,7 @@ int uci_tokens(int num_tokens, char **tokens) {
     /*}}}*/
   }
   else {
-    printf("?|%s|\n", cmd);
+    printf("%s ?\n", cmd);
   }
 
   return 0;
