@@ -1,6 +1,6 @@
 
 #define VERSION "1"
-#define BUILD "14"
+#define BUILD "15"
 
 /*{{{  includes*/
 
@@ -26,6 +26,9 @@
 
 #define max(a,b) (( (a) > (b) ) ? (a) : (b))
 #define min(a,b) (( (a) < (b) ) ? (a) : (b))
+
+#define IS_ALIGNED(p, a)  ((((uintptr_t)(p)) & ((a) - 1)) == 0)
+#define ASSERT_ALIGNED64(p)  assert(IS_ALIGNED((p), 64))
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
   #include <stdalign.h>
@@ -156,6 +159,8 @@ typedef struct {
 
   uint64_t hash;
 
+  uint8_t _pad[56];
+
 } Position;
 
 /*}}}*/
@@ -178,6 +183,8 @@ typedef struct {
   int16_t ev;
   uint8_t in_check;
   uint8_t stage;
+
+  uint8_t _pad[46];
 
 } Node;
 
@@ -329,7 +336,7 @@ ALIGN64 int32_t net_h1_w[NET_I_SIZE * NET_H1_SIZE];
 ALIGN64 int32_t net_h2_w[NET_I_SIZE * NET_H1_SIZE];  // flipped
 ALIGN64 int32_t net_h1_b[NET_H1_SIZE];
 ALIGN64 int32_t net_o_w [NET_H1_SIZE * 2];
-int32_t net_o_b;
+ALIGN64 int32_t net_o_b;
 
 const int see_values[12] = {100, 325, 325, 500, 1000, 0, 100, 325, 325, 500, 1000, 0};
 const int orth_offset[2] = {8, -8};
@@ -4457,6 +4464,19 @@ int init_once(void) {
     return 1;
 
   uint64_t elapsed_ms = now_ms() - start_ms;
+
+  printf("%lu %lu\n", sizeof(Node)%64, sizeof(Position)%64); //hack
+
+  ASSERT_ALIGNED64(raw_attacks);
+  ASSERT_ALIGNED64(ss);
+  ASSERT_ALIGNED64(ss[0].acc1);
+  ASSERT_ALIGNED64(ss[0].acc2);
+  ASSERT_ALIGNED64(ss[1].acc1);
+  ASSERT_ALIGNED64(ss[1].acc2);
+  ASSERT_ALIGNED64(net_h1_w);
+  ASSERT_ALIGNED64(net_h2_w);
+  ASSERT_ALIGNED64(net_h1_b);
+  ASSERT_ALIGNED64(net_o_w);
 
   printf("info init_once %" PRIu64 "ms\n", elapsed_ms);
 
