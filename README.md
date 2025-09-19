@@ -29,4 +29,16 @@ et - perform a series of eval tests.
 quit - close cwtch.
 ```
 
+## Acknowledgements
 
+https://github.com/jw1912/bullet - bullet network trainer
+
+https://www.chessprogramming.org/Main_Page - Chess programming wiki
+
+https://computerchess.org.uk/ccrl/4040 - CCRL rating list
+
+https://backscattering.de/chess/uci - UCI protocol
+
+https://discord.gg/uM8J3x46 - Engine Programming Discord
+
+https://talkchess.com - Talkchess forums
