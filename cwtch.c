@@ -1,6 +1,6 @@
 
-#define VERSION "1"
-#define BUILD "16"
+#define VERSION "2"
+#define BUILD "18"
 
 /*{{{  includes*/
 
@@ -4711,7 +4711,7 @@ int uci_tokens(int num_tokens, char **tokens) {
     
     /*}}}*/
   }
-  else if (!strcmp(cmd, "q")) {
+  else if (!strcmp(cmd, "quit") || !strcmp(cmd, "q")) {
     /*{{{  quit*/
     
     return 1;
