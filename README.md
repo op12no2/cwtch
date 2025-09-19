@@ -24,7 +24,7 @@ pt - perform a series of PERFT searches.
 
 et - perform a series of eval tests.
 
-quit
+q - quit
 ```
 
 
