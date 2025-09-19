@@ -1,52 +1,38 @@
-# --- toolchain ---
+# Simple single-file build for cwtch.c
+
 CC := clang
-
-# --- layout ---
-SRC_DIR   := .
-BUILD_DIR := build
-BIN       := cwtch
-
-# --- build type: release|debug (default release) ---
 BUILD ?= release
+ARCH ?= native
+
+EXTRA_CFLAGS ?=
+EXTRA_LDFLAGS ?=
+
+BIN := cwtch
+SRC := cwtch.c
 
 ifeq ($(BUILD),release)
-  CFLAGS  := -O3 -march=native -flto -fno-semantic-interposition -DNDEBUG
-  LDFLAGS := -flto -fuse-ld=lld
-# Allow scripts/CI to inject extra flags (e.g., PGO)
-  CFLAGS  += $(EXTRA_CFLAGS)
-  LDFLAGS += $(EXTRA_LDFLAGS)
+  CFLAGS := -O3 -march=$(ARCH) -flto -DNDEBUG $(EXTRA_CFLAGS)
+  LDFLAGS := -flto -fuse-ld=lld $(EXTRA_LDFLAGS)
 else ifeq ($(BUILD),debug)
-  CFLAGS  := -Og -g3 -Wall -Wextra -fno-omit-frame-pointer
-  LDFLAGS :=
+  CFLAGS := -Og -g3 -Wall -Wextra -fno-omit-frame-pointer $(EXTRA_CFLAGS)
+  LDFLAGS := $(EXTRA_LDFLAGS)
 else
   $(error BUILD must be 'release' or 'debug')
 endif
 
-# --- sources/objects/deps ---
-SRC := $(wildcard $(SRC_DIR)/cwtch.c)
-OBJ := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRC))
-DEP := $(OBJ:.o=.d)
-
-# --- default goal ---
-.DEFAULT_GOAL := all
-.PHONY: all clean
-
+.PHONY: all clean diag
 all: $(BIN)
 
-# Link in root
-$(BIN): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $@ $(LDFLAGS)
-
-# Compile to build/, search headers in src/
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)/
-	$(CC) $(CFLAGS) -I$(SRC_DIR) -c $< -o $@
-
-# Ensure build dir exists
-$(BUILD_DIR)/:
-	mkdir -p $@
-
-# Include auto-generated dependencies
--include $(DEP)
+$(BIN): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $@ $(LDFLAGS)
 
 clean:
-	rm -rf $(BUILD_DIR) $(BIN)
+	rm -f $(BIN)
+
+# Optional: build with vectorization diagnostics
+diag: CFLAGS += -Rpass=loop-vectorize -Rpass=slp-vectorize \
+               -Rpass-missed=loop-vectorize -Rpass-missed=slp-vectorize \
+               -Rpass-analysis=loop-vectorize -Rpass-analysis=slp-vectorize \
+               -fsave-optimization-record
+diag: all
+
