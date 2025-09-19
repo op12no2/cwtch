@@ -1,6 +1,6 @@
 
 #define VERSION "1"
-#define BUILD "15"
+#define BUILD "16"
 
 /*{{{  includes*/
 
@@ -322,7 +322,6 @@ ALIGN64 TT *tt    = NULL;
 size_t tt_entries = 0;
 size_t tt_mask    = 0;
 
-const uint8_t lut_hmc_reset[16] = {0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1};
 const uint8_t lut_see[16]       = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0};
 const uint8_t lut_prune[16]     = {1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 const uint8_t lut_history[16]   = {1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1};
@@ -1161,7 +1160,7 @@ HOT int net_eval(Node *const node) {
 
   int acc = 0;
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec eval
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec eval
     acc += w1[i] * sqrelu(a1[i]) + w2[i] * sqrelu(a2[i]);
   }
 
@@ -1198,7 +1197,7 @@ HOT void net_move(Node *const node) {
   const int32_t *const RESTRICT w2_b1 = &net_h2_w[b1];
   const int32_t *const RESTRICT w2_b2 = &net_h2_w[b2];
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec move
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec move
     a1[i] += w1_b2[i] - w1_b1[i];
     a2[i] += w2_b2[i] - w2_b1[i];
   }
@@ -1230,7 +1229,7 @@ HOT void net_capture(Node *const node) {
   const int32_t *const RESTRICT w2_b2 = &net_h2_w[b2];
   const int32_t *const RESTRICT w2_b3 = &net_h2_w[b3];
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec cap
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec cap
     a1[i] += w1_b3[i] - w1_b2[i] - w1_b1[i];
     a2[i] += w2_b3[i] - w2_b2[i] - w2_b1[i];
   }
@@ -1259,7 +1258,7 @@ HOT void net_promo_push (Node *const node) {
   const int32_t *const RESTRICT w2_b1 = &net_h2_w[b1];
   const int32_t *const RESTRICT w2_b2 = &net_h2_w[b2];
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec promo push
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec promo push
     a1[i] += w1_b2[i] - w1_b1[i];
     a2[i] += w2_b2[i] - w2_b1[i];
   }
@@ -1292,7 +1291,7 @@ HOT void net_promo_capture (Node *const node) {
   const int32_t *const RESTRICT w2_b2 = &net_h2_w[b2];
   const int32_t *const RESTRICT w2_b3 = &net_h2_w[b3];
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec promo cap
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec promo cap
     a1[i] += w1_b2[i] - w1_b1[i] - w1_b3[i];
     a2[i] += w2_b2[i] - w2_b1[i] - w2_b3[i];
   }
@@ -1325,7 +1324,7 @@ HOT void net_ep_capture (Node *const node) {
   const int32_t *const RESTRICT w2_b2 = &net_h2_w[b2];
   const int32_t *const RESTRICT w2_b3 = &net_h2_w[b3];
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec ep
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec ep
     a1[i] += w1_b2[i] - w1_b1[i] - w1_b3[i];
     a2[i] += w2_b2[i] - w2_b1[i] - w2_b3[i];
   }
@@ -1363,7 +1362,7 @@ HOT void net_castle (Node *const node) {
   const int32_t *const RESTRICT w2_b3 = &net_h2_w[b3];
   const int32_t *const RESTRICT w2_b4 = &net_h2_w[b4];
 
-  for (int i=0; i < NET_H1_SIZE; i++) {  // vec_castle
+  for (int i=0; i < NET_H1_SIZE; i++) {  // autovec_castle
     a1[i] += w1_b2[i] - w1_b1[i] + w1_b4[i] - w1_b3[i];
     a2[i] += w2_b2[i] - w2_b1[i] + w2_b4[i] - w2_b3[i];
   }
@@ -2623,6 +2622,7 @@ HOT void post_move(Position *const pos) {
   pos->stm    ^= 1;
   pos->rights = (uint8_t)rights;
   pos->ep     = (uint8_t)ep;
+  pos->hmc    += 1;
 
 }
 
@@ -2684,6 +2684,7 @@ HOT void post_capture(Position *const pos) {
   pos->stm    ^= 1;
   pos->rights = (uint8_t)rights;
   pos->ep     = (uint8_t)ep;
+  pos->hmc    = 0;
 
 }
 
@@ -2727,7 +2728,7 @@ HOT void pre_capture(Position *const pos, const move_t move) {
 
 HOT void post_push(Position *const pos) {
 
-  int ep = pos->ep;
+  int ep        = pos->ep;
   uint64_t hash = pos->hash;
 
   const int from_piece = lazy.arg0;
@@ -2749,6 +2750,7 @@ HOT void post_push(Position *const pos) {
   pos->hash = hash;
   pos->stm  ^= 1;
   pos->ep   = (uint8_t)ep;
+  pos->hmc  = 0;
 
 }
 
@@ -2808,6 +2810,7 @@ HOT void post_ep_capture(Position *const pos) {
   pos->hash = hash;
   pos->stm  ^= 1;
   pos->ep   = (uint8_t)ep;
+  pos->hmc  = 0;
 
 }
 
@@ -2879,9 +2882,9 @@ HOT void post_castle(Position *const pos) {
   ep = 0;
   hash ^= zob_ep[ep];
 
-  hash ^= zob_rights[rights];
+  hash   ^= zob_rights[rights];
   rights &= rights_masks[from] & rights_masks[to];
-  hash ^= zob_rights[rights];
+  hash   ^= zob_rights[rights];
 
   hash ^= zob_stm;
 
@@ -2889,6 +2892,7 @@ HOT void post_castle(Position *const pos) {
   pos->stm    ^= 1;
   pos->rights = (uint8_t)rights;
   pos->ep     = (uint8_t)ep;
+  pos->hmc    += 1;
 
 }
 
@@ -2950,7 +2954,7 @@ HOT void post_promo_push(Position *const pos) {
   hash ^= zob_pieces[(from_piece << 6) | from] ^ zob_pieces[(pro << 6) | to];
 
   hash ^= zob_ep[ep];
-  ep = 0;
+  ep   = 0;
   hash ^= zob_ep[ep];
 
   hash ^= zob_stm;
@@ -2958,6 +2962,7 @@ HOT void post_promo_push(Position *const pos) {
   pos->hash = hash;
   pos->stm  ^= 1;
   pos->ep   = (uint8_t)ep;
+  pos->hmc  = 0;
 
 }
 
@@ -3015,12 +3020,12 @@ HOT void post_promo_capture(Position *const pos) {
   hash ^= zob_pieces[from_piece << 6 | from] ^ zob_pieces[to_piece << 6 | to] ^ zob_pieces[pro << 6 | to];
 
   hash ^= zob_ep[ep];
-  ep = 0;
+  ep   = 0;
   hash ^= zob_ep[ep];
 
-  hash ^= zob_rights[rights];
+  hash   ^= zob_rights[rights];
   rights &= rights_masks[from] & rights_masks[to];
-  hash ^= zob_rights[rights];
+  hash   ^= zob_rights[rights];
 
   hash ^= zob_stm;
 
@@ -3028,6 +3033,7 @@ HOT void post_promo_capture(Position *const pos) {
   pos->stm    ^= 1;
   pos->rights = (uint8_t)rights;
   pos->ep     = (uint8_t)ep;
+  pos->hmc    = 0;
 
 }
 
@@ -3092,10 +3098,6 @@ void init_move_funcs(void) {
 
 /*}}}*/
 /*{{{  make_move_pre*/
-//
-// Only one of the relevant move type flags will be set, so
-// it can be used as an index into a table of pre_ functions.
-//
 
 HOT void make_move_pre(Position *const pos, const move_t move) {
 
@@ -3130,17 +3132,11 @@ HOT void make_move_pre(Position *const pos, const move_t move) {
 /*{{{  make_move_post*/
 //
 // Call the _post func set up by the _pre_func.
-// Also update the HMC.
 //
 
 HOT void make_move_post(Position *const pos, const move_t move) {
 
   lazy.post_func(pos);
-
-  if (lut(lut_hmc_reset, move))  // hack move into post_ funcs
-    pos->hmc = 0;
-  else
-    pos->hmc = min(255, pos->hmc+1);
 
 }
 
@@ -3151,26 +3147,19 @@ HOT void make_move_post(Position *const pos, const move_t move) {
 
 HOT void make_null_move(Position *const pos) {
 
-  //int rights     = pos->rights;
-  int ep         = pos->ep;
-  uint64_t hash  = pos->hash;
+  int ep        = pos->ep;
+  uint64_t hash = pos->hash;
 
   hash ^= zob_ep[ep];
   ep   = 0;
   hash ^= zob_ep[ep];
 
-  //hash   ^= zob_rights[rights];
-  //rights = 0;
-  //hash   ^= zob_rights[rights];
-
   hash ^= zob_stm;
 
-  pos->hash   = hash;
-  pos->stm    ^= 1;
-  //pos->rights = (uint8_t)rights;
-  pos->ep     = (uint8_t)ep;
-
-  pos->hmc = 0;
+  pos->hash = hash;
+  pos->stm  ^= 1;
+  pos->ep   = (uint8_t)ep;
+  pos->hmc  = 0;
 
 }
 
@@ -4465,7 +4454,7 @@ int init_once(void) {
 
   uint64_t elapsed_ms = now_ms() - start_ms;
 
-  printf("%lu %lu\n", sizeof(Node)%64, sizeof(Position)%64); //hack
+  //printf("%lu %lu\n", sizeof(Node)%64, sizeof(Position)%64); //hack
 
   ASSERT_ALIGNED64(raw_attacks);
   ASSERT_ALIGNED64(ss);
@@ -4478,7 +4467,7 @@ int init_once(void) {
   ASSERT_ALIGNED64(net_h1_b);
   ASSERT_ALIGNED64(net_o_w);
 
-  printf("info init_once %" PRIu64 "ms\n", elapsed_ms);
+  //printf("info init_once %" PRIu64 "ms\n", elapsed_ms);
 
   return 0;
 
