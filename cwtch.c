@@ -1,6 +1,6 @@
 
-#define VERSION "2"
-#define BUILD "18"
+#define VERSION "3"
+#define BUILD "19"
 
 /*{{{  includes*/
 
@@ -4263,7 +4263,7 @@ void go(void) {
     uint64_t elapsed_ms = end_ms - tc.start_time;
     uint64_t nps        = (tc.nodes * 1000ULL) / (elapsed_ms ? elapsed_ms : 1);
     
-    printf("info depth %d score %d nodes %" PRIu64 " nps %" PRIu64 " pv %s\n", depth, tc.bs, tc.nodes, nps, pv_str);
+    printf("info depth %d score cp %d nodes %" PRIu64 " nps %" PRIu64 " pv %s\n", depth, tc.bs, tc.nodes, nps, pv_str);
     
     /*}}}*/
 
