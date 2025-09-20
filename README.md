@@ -25,8 +25,6 @@ draw - is the current board in a drawn state?
 pt - perform a series of PERFT searches.
 
 et - perform a series of eval tests.
-
-quit - close cwtch.
 ```
 
 ## Acknowledgements
