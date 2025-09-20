@@ -10,7 +10,7 @@ Cwtch means cuddle in Welsh and is pronounced cutch with a very short u like in 
 ## Command Extensions
 
 ```
-bench - display a cumulative node count for a colleciton of searches.
+bench - display a cumulative node count for a collection of searches.
 
 eval - display the current evaluation.
 
