@@ -33,13 +33,20 @@ SRC := cwtch.c
 
 # Base flags
 ifeq ($(BUILD),release)
-  CFLAGS := -O3 -march=$(ARCH) -flto -DNDEBUG -pthread $(EXTRA_CFLAGS)
+  CFLAGS  := -O3 -march=$(ARCH) -flto -DNDEBUG -pthread $(EXTRA_CFLAGS)
   LDFLAGS := -flto -fuse-ld=lld $(EXTRA_LDFLAGS)
-else ifeq ($(BUILD),debug)
-  CFLAGS := -Og -g3 -Wall -Wextra -fno-omit-frame-pointer -pthread $(EXTRA_CFLAGS)
-  LDFLAGS := $(EXTRA_LDFLAGS)
 else
-  $(error BUILD must be 'release' or 'debug')
+  ifeq ($(BUILD),dev)
+    CFLAGS  := -O3 -march=native -flto -pthread $(EXTRA_CFLAGS)   # keep asserts
+    LDFLAGS := -flto -fuse-ld=lld $(EXTRA_LDFLAGS)
+  else
+    ifeq ($(BUILD),debug)
+      CFLAGS  := -Og -g3 -Wall -Wextra -fno-omit-frame-pointer -pthread $(EXTRA_CFLAGS)
+      LDFLAGS := $(EXTRA_LDFLAGS)
+    else
+      $(error BUILD must be 'release', 'dev', or 'debug')
+    endif
+  endif
 endif
 
 # Windows-only: link winpthread statically; keep everything else dynamic
