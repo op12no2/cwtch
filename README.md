@@ -5,7 +5,7 @@ Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently compi
 
 The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
-Cwtch means cuddle in Welsh and is pronounced cutch with a very short u like in put - ish.
+Cwtch means hug/cuddle in Welsh and is pronounced cutch with a very short u like in put - ish.
 
 ## Command Extensions
 
