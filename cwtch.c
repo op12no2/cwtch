@@ -1,6 +1,6 @@
 
 #define VERSION "3"
-#define BUILD "20"
+#define BUILD "21"
 
 /*{{{  includes*/
 
@@ -4480,10 +4480,8 @@ int init_once(void) {
 /*}}}*/
 /*{{{  threads*/
 
-#include <pthread.h>
-
-static pthread_t search_thread;
-static _Atomic int search_running = 0;
+pthread_t search_thread;
+_Atomic int search_running = 0;
 
 void *go_thread_fn(void *arg) {
   (void)arg;
@@ -4528,121 +4526,129 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "position") || !strcmp(cmd, "p")) {
     /*{{{  position*/
     
-    if (!tt) {
-      printf("info run a ucinewgame command or setoption name Hash value 16 (etc) command first\n");
-      return 0;
+    if (!atomic_load(&search_running)) {
+    
+      if (!tt) {
+        printf("info run a ucinewgame command or setoption name Hash value 16 (etc) command first\n");
+        return 0;
+      }
+    
+      /*{{{  get pointer to moves and number of moves*/
+      
+      char **moves_pointer = NULL;
+      int num_moves        = 0;
+      int moves_index      = find_token("moves", num_tokens, tokens);
+      
+      if (moves_index != -1)
+        num_moves = num_tokens - (moves_index + 1);
+      
+      if (num_moves > 0)
+        moves_pointer = &tokens[moves_index + 1];
+      
+      else
+        num_moves = 0;
+      
+      /*}}}*/
+    
+      if (!strcmp(sub, "startpos") || !strcmp(sub, "s"))
+    
+        position(&ss[0], "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", num_moves, moves_pointer);
+    
+      else if (!strcmp(sub, "fen") || !strcmp(sub, "f"))
+    
+        position(&ss[0], tokens[2], tokens[3], tokens[4], tokens[5], num_moves, moves_pointer);
+    
     }
-    
-    /*{{{  get pointer to moves and number of moves*/
-    
-    char **moves_pointer = NULL;
-    int num_moves        = 0;
-    int moves_index      = find_token("moves", num_tokens, tokens);
-    
-    if (moves_index != -1)
-      num_moves = num_tokens - (moves_index + 1);
-    
-    if (num_moves > 0)
-      moves_pointer = &tokens[moves_index + 1];
-    
-    else
-      num_moves = 0;
-    
-    /*}}}*/
-    
-    if (!strcmp(sub, "startpos") || !strcmp(sub, "s"))
-    
-      position(&ss[0], "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", num_moves, moves_pointer);
-    
-    else if (!strcmp(sub, "fen") || !strcmp(sub, "f"))
-    
-      position(&ss[0], tokens[2], tokens[3], tokens[4], tokens[5], num_moves, moves_pointer);
     
     /*}}}*/
   }
   else if (!strcmp(cmd, "go") || !strcmp(cmd, "g")) {
     /*{{{  go*/
     
-    if (!tt) {
-      printf("info run a ucinewgame command or setoption name Hash value 16 (etc) command first\n");
-      return 0;
-    }
+    if (!atomic_load(&search_running)) {
     
-    if (ss[0].pos.hash == 0) {
-      printf("info run a position startpos (etc) command first\n");
-      return 0;
-    }
-    
-    int64_t wtime = 0;
-    int64_t winc = 0;
-    int64_t btime = 0;
-    int64_t binc = 0;
-    int64_t max_nodes = 0;
-    int64_t move_time = 0;
-    int max_depth = 0;
-    int moves_to_go = 0;
-    
-    /*{{{  get the go params*/
-    
-    int t = 1;
-    
-    while (t < num_tokens - 1) {
-    
-      const char *token = tokens[t];
-    
-      if (!strcmp(token, "wtime")) {
-        t++;
-        wtime = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "winc")) {
-        t++;
-        winc = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "btime")) {
-        t++;
-        btime = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "binc")) {
-        t++;
-        binc = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "depth") || !strcmp(token, "d")) {
-        t++;
-        max_depth = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "nodes") || !strcmp(token, "n")) {
-        t++;
-        max_nodes = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "movetime") || !strcmp(token, "m")) {
-        t++;
-        move_time = atoi(tokens[t]);
-      }
-      else if (!strcmp(token, "movestogo")) {
-        t++;
-        moves_to_go = atoi(tokens[t]);
+      if (!tt) {
+        printf("info run a ucinewgame command or setoption name Hash value 16 (etc) command first\n");
+        return 0;
       }
     
-      t++;
+      if (ss[0].pos.hash == 0) {
+        printf("info run a position startpos (etc) command first\n");
+        return 0;
+      }
     
-    }
+      int64_t wtime = 0;
+      int64_t winc = 0;
+      int64_t btime = 0;
+      int64_t binc = 0;
+      int64_t max_nodes = 0;
+      int64_t move_time = 0;
+      int max_depth = 0;
+      int moves_to_go = 0;
     
-    if (num_tokens == 2 && !strcmp(tokens[1], "infinite")) {
-      max_depth = MAX_PLY;
-    }
+      /*{{{  get the go params*/
+      
+      int t = 1;
+      
+      while (t < num_tokens - 1) {
+      
+        const char *token = tokens[t];
+      
+        if (!strcmp(token, "wtime")) {
+          t++;
+          wtime = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "winc")) {
+          t++;
+          winc = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "btime")) {
+          t++;
+          btime = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "binc")) {
+          t++;
+          binc = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "depth") || !strcmp(token, "d")) {
+          t++;
+          max_depth = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "nodes") || !strcmp(token, "n")) {
+          t++;
+          max_nodes = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "movetime") || !strcmp(token, "m")) {
+          t++;
+          move_time = atoi(tokens[t]);
+        }
+        else if (!strcmp(token, "movestogo")) {
+          t++;
+          moves_to_go = atoi(tokens[t]);
+        }
+      
+        t++;
+      
+      }
+      
+      if (num_tokens == 2 && !strcmp(tokens[1], "infinite")) {
+        max_depth = MAX_PLY;
+      }
+      
+      /*}}}*/
     
-    /*}}}*/
+      tc_init(wtime, winc, btime, binc, max_nodes, move_time, max_depth, moves_to_go);
     
-    tc_init(wtime, winc, btime, binc, max_nodes, move_time, max_depth, moves_to_go);
+      atomic_store(&tc.finished, 0);
+      join_search_if_running();
     
-    atomic_store(&tc.finished, 0);
-    join_search_if_running();
+      if (pthread_create(&search_thread, NULL, go_thread_fn, NULL) == 0) {
+        atomic_store(&search_running, 1);
+      }
+      else {
+        go();
+      }
     
-    if (pthread_create(&search_thread, NULL, go_thread_fn, NULL) == 0) {
-      atomic_store(&search_running, 1);
-    }
-    else {
-      go();
     }
     
     /*}}}*/
@@ -4658,7 +4664,11 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "ucinewgame") || !strcmp(cmd, "u")) {
     /*{{{  ucinewgame*/
     
-    ucinewgame();
+    if (!atomic_load(&search_running)) {
+    
+      ucinewgame();
+    
+    }
     
     /*}}}*/
   }
@@ -4675,9 +4685,13 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "setoption")) {
     /*{{{  setoption*/
     
-    if (!strcmp(tokens[2], "Hash")) {
+    if (!atomic_load(&search_running)) {
     
-      init_tt(atoi(tokens[4]));
+      if (!strcmp(tokens[2], "Hash")) {
+    
+        init_tt(atoi(tokens[4]));
+    
+      }
     
     }
     
@@ -4686,7 +4700,11 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "board") || !strcmp(cmd, "b")) {
     /*{{{  board*/
     
-    print_board(&ss[0]);
+    if (!atomic_load(&search_running)) {
+    
+      print_board(&ss[0]);
+    
+    }
     
     /*}}}*/
   }
@@ -4702,9 +4720,13 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "eval") || !strcmp(cmd, "e")) {
     /*{{{  eval*/
     
-    const int e = eval(&ss[0]);
+    if (!atomic_load(&search_running)) {
     
-    printf("%d\n", e);
+      const int e = eval(&ss[0]);
+    
+      printf("%d\n", e);
+    
+    }
     
     /*}}}*/
   }
@@ -4718,39 +4740,55 @@ int uci_tokens(int num_tokens, char **tokens) {
   else if (!strcmp(cmd, "perft") || !strcmp(cmd, "f")) {
     /*{{{  perft*/
     
-    const int depth = atoi(sub);
-    uint64_t start_ms = now_ms();
-    uint64_t total_nodes = 0;
+    if (!atomic_load(&search_running)) {
     
-    uint64_t num_nodes = perft(0, depth);
-    total_nodes += num_nodes;
+      const int depth = atoi(sub);
+      uint64_t start_ms = now_ms();
+      uint64_t total_nodes = 0;
     
-    uint64_t end_ms     = now_ms();
-    uint64_t elapsed_ms = end_ms - start_ms;
-    uint64_t nps        = (total_nodes * 1000ULL) / (elapsed_ms ? elapsed_ms : 1);
+      uint64_t num_nodes = perft(0, depth);
+      total_nodes += num_nodes;
     
-    printf("time %" PRIu64 " nodes %" PRIu64 " nps %" PRIu64 "\n", elapsed_ms, total_nodes, nps);
+      uint64_t end_ms     = now_ms();
+      uint64_t elapsed_ms = end_ms - start_ms;
+      uint64_t nps        = (total_nodes * 1000ULL) / (elapsed_ms ? elapsed_ms : 1);
+    
+      printf("time %" PRIu64 " nodes %" PRIu64 " nps %" PRIu64 "\n", elapsed_ms, total_nodes, nps);
+    
+    }
     
     /*}}}*/
   }
   else if (!strcmp(cmd, "bench") || !strcmp(cmd, "h")) {
     /*{{{  bench*/
     
-    bench();
+    if (!atomic_load(&search_running)) {
+    
+      bench();
+    
+    }
     
     /*}}}*/
   }
   else if (!strcmp(cmd, "et")) {
     /*{{{  eval tests*/
     
-    et();
+    if (!atomic_load(&search_running)) {
+    
+      et();
+    
+    }
     
     /*}}}*/
   }
   else if (!strcmp(cmd, "pt")) {
     /*{{{  perft tests*/
     
-    perft_tests();
+    if (!atomic_load(&search_running)) {
+    
+      perft_tests();
+    
+    }
     
     /*}}}*/
   }
