@@ -1,6 +1,6 @@
 
 #define VERSION "3"
-#define BUILD "19"
+#define BUILD "20"
 
 /*{{{  includes*/
 
@@ -19,6 +19,9 @@
 #include <assert.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <pthread.h>
+#include <stdatomic.h>
+
 #include "weights.h"
 
 /*}}}*/
@@ -211,11 +214,12 @@ typedef struct {
 
 typedef struct {
 
+  _Atomic uint8_t finished;
+
   uint64_t start_time;
   uint64_t finish_time;
   int max_depth;
   uint64_t max_nodes;
-  uint8_t finished;
   uint64_t nodes;
   move_t bm;
   int bs;
@@ -4474,6 +4478,29 @@ int init_once(void) {
 }
 
 /*}}}*/
+/*{{{  threads*/
+
+#include <pthread.h>
+
+static pthread_t search_thread;
+static _Atomic int search_running = 0;
+
+void *go_thread_fn(void *arg) {
+  (void)arg;
+  go();
+  atomic_store(&search_running, 0);
+  return NULL;
+}
+
+void join_search_if_running(void) {
+  if (atomic_load(&search_running)) {
+    atomic_store(&tc.finished, 1);
+    pthread_join(search_thread, NULL);
+    atomic_store(&search_running, 0);
+  }
+}
+
+/*}}}*/
 /*{{{  uci*/
 
 /*{{{  uci_tokens*/
@@ -4608,7 +4635,23 @@ int uci_tokens(int num_tokens, char **tokens) {
     
     tc_init(wtime, winc, btime, binc, max_nodes, move_time, max_depth, moves_to_go);
     
-    go();
+    atomic_store(&tc.finished, 0);
+    join_search_if_running();
+    
+    if (pthread_create(&search_thread, NULL, go_thread_fn, NULL) == 0) {
+      atomic_store(&search_running, 1);
+    }
+    else {
+      go();
+    }
+    
+    /*}}}*/
+  }
+  else if (!strcmp(cmd, "stop")) {
+    /*{{{  stop*/
+    
+    atomic_store(&tc.finished, 1);
+    join_search_if_running();
     
     /*}}}*/
   }
@@ -4713,6 +4756,9 @@ int uci_tokens(int num_tokens, char **tokens) {
   }
   else if (!strcmp(cmd, "quit") || !strcmp(cmd, "q")) {
     /*{{{  quit*/
+    
+    atomic_store(&tc.finished, 1);
+    join_search_if_running();
     
     return 1;
     
