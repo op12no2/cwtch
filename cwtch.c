@@ -1,6 +1,6 @@
 
 #define VERSION "3"
-#define BUILD "21"
+#define BUILD "22"
 
 /*{{{  includes*/
 
@@ -3992,7 +3992,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
   /*}}}*/
   /*{{{  nmp*/
   
-  if (!is_pv && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(this_pos)) {
+  if (!is_pv && !in_check && depth > 1 && ev > beta && !is_pawn_endgame(this_pos)) {
   
     r = 3;
   

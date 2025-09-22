@@ -64,9 +64,6 @@ clean:
 	rm -f $(BIN)
 
 # Optional: build with vectorization diagnostics
-diag: CFLAGS += -Rpass=loop-vectorize -Rpass=slp-vectorize \
-               -Rpass-missed=loop-vectorize -Rpass-missed=slp-vectorize \
-               -Rpass-analysis=loop-vectorize -Rpass-analysis=slp-vectorize \
-               -fsave-optimization-record
+diag: CFLAGS += -Rpass=loop-vectorize 
 diag: all
 
