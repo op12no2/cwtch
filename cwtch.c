@@ -1,6 +1,6 @@
 
 #define VERSION "3"
-#define BUILD "22"
+#define BUILD "19"
 
 /*{{{  includes*/
 
@@ -19,9 +19,6 @@
 #include <assert.h>
 #include <unistd.h>
 #include <libgen.h>
-#include <pthread.h>
-#include <stdatomic.h>
-
 #include "weights.h"
 
 /*}}}*/
@@ -42,6 +39,17 @@
   #define ALIGN64 __attribute__((aligned(64)))
 #endif
 
+#if defined(_MSC_VER)
+  #define INLINE_HOT __forceinline
+  #define HOT
+#elif defined(__GNUC__) || defined(__clang__)
+  #define INLINE_HOT inline __attribute__((always_inline, hot))
+  #define HOT __attribute__((hot))
+#else
+  #define INLINE_HOT inline
+  #define HOT
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
   #define RESTRICT __restrict
 #else
@@ -54,7 +62,6 @@
 /*{{{  constants*/
 
 #define MAX_PLY 128
-#define SAFE_PLY 127
 #define MAX_MOVES 256
 
 #define INF  30000
@@ -208,7 +215,7 @@ typedef struct {
   uint64_t finish_time;
   int max_depth;
   uint64_t max_nodes;
-  _Atomic uint8_t finished;
+  uint8_t finished;
   uint64_t nodes;
   move_t bm;
   int bs;
@@ -315,9 +322,9 @@ ALIGN64 TT *tt    = NULL;
 size_t tt_entries = 0;
 size_t tt_mask    = 0;
 
-const uint8_t lut_see[16]     = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0};
-const uint8_t lut_prune[16]   = {1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t lut_history[16] = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
+const uint8_t lut_see[16]       = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0};
+const uint8_t lut_prune[16]     = {1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t lut_history[16]   = {1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1};
 
 ALIGN64 uint64_t zob_pieces[12 * 64];
 ALIGN64 uint64_t zob_stm;
@@ -482,7 +489,7 @@ ALIGN64 uint64_t anti_mask[64];
 
 /*{{{  now_ms*/
 
-uint64_t now_ms(void) {
+HOT uint64_t now_ms(void) {
 
   struct timespec ts;
 
@@ -494,7 +501,7 @@ uint64_t now_ms(void) {
 /*}}}*/
 /*{{{  popcount*/
 
-int popcount(const uint64_t bb) {
+INLINE_HOT int popcount(const uint64_t bb) {
 
   return __builtin_popcountll(bb);
 
@@ -503,7 +510,7 @@ int popcount(const uint64_t bb) {
 /*}}}*/
 /*{{{  encode_move*/
 
-move_t encode_move(const int from, const int to, const int flags) {
+INLINE_HOT move_t encode_move(const int from, const int to, const int flags) {
 
   return (from << 6) | to | flags;
 
@@ -512,7 +519,7 @@ move_t encode_move(const int from, const int to, const int flags) {
 /*}}}*/
 /*{{{  bsf*/
 
-int bsf(const uint64_t bb) {
+INLINE_HOT int bsf(const uint64_t bb) {
 
   return __builtin_ctzll(bb);
 
@@ -534,7 +541,7 @@ uint64_t rand64(void) {
 /*}}}*/
 /*{{{  piece_index*/
 
-int piece_index(const int piece, const int colour) {
+INLINE_HOT int piece_index(const int piece, const int colour) {
 
   return piece + colour * 6;
 
@@ -543,7 +550,7 @@ int piece_index(const int piece, const int colour) {
 /*}}}*/
 /*{{{  colour_index*/
 
-int colour_index(const int colour) {
+INLINE_HOT int colour_index(const int colour) {
 
   return colour * 6;
 
@@ -663,7 +670,7 @@ int find_token(const char *token, int n, char **tokens) {
 /*}}}*/
 /*{{{  zob_index*/
 
-int zob_index(const int piece, const int sq) {
+INLINE_HOT int zob_index(const int piece, const int sq) {
 
   return (piece << 6) | sq;
 
@@ -672,7 +679,7 @@ int zob_index(const int piece, const int sq) {
 /*}}}*/
 /*{{{  sqrrelu*/
 
-int32_t sqrelu(const int32_t x) {
+INLINE_HOT int32_t sqrelu(const int32_t x) {
 
   const int32_t y = x & ~(x >> 31);
 
@@ -716,7 +723,7 @@ void init_line_masks(void) {
 /*}}}*/
 /*{{{  lut*/
 
-uint8_t lut(const uint8_t *const this_lut, const move_t move) {
+INLINE_HOT uint8_t lut(const uint8_t *const this_lut, const move_t move) {
 
   return this_lut[(move >> 12) & 0xF];
 
@@ -780,7 +787,7 @@ void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t m
 /*}}}*/
 /*{{{  check_tc*/
 
-void check_tc(void) {
+HOT void check_tc(void) {
 
   if (tc.finished)
     return;
@@ -927,7 +934,7 @@ TT *tt_get(const Position *const pos) {
 
 /*{{{  net_base*/
 
-int net_base(const int piece, const int sq) {
+INLINE_HOT int net_base(const int piece, const int sq) {
 
   return (((piece << 6) | sq) << NET_H1_SHIFT);
 
@@ -1098,7 +1105,7 @@ int init_weights(void) {
 /*}}}*/
 /*{{{  net_copy*/
 
-void net_copy(const Node *const from_node, Node *const to_node) {
+INLINE_HOT void net_copy(const Node *const from_node, Node *const to_node) {
 
   memcpy(to_node->acc1, from_node->acc1, sizeof from_node->acc1);
   memcpy(to_node->acc2, from_node->acc2, sizeof from_node->acc2);
@@ -1132,7 +1139,7 @@ void net_slow_rebuild_accs(Node *const node) {
 /*}}}*/
 /*{{{  net_update_accs*/
 
-void net_update_accs(Node *const node) {
+INLINE_HOT void net_update_accs(Node *const node) {
 
   lazy.net_func(node);
 
@@ -1141,7 +1148,7 @@ void net_update_accs(Node *const node) {
 /*}}}*/
 /*{{{  net_eval*/
 
-int net_eval(Node *const node) {
+HOT int net_eval(Node *const node) {
 
   const int stm = node->pos.stm;
 
@@ -1172,7 +1179,7 @@ int net_eval(Node *const node) {
 
 /*{{{  net_move*/
 
-void net_move(Node *const node) {
+HOT void net_move(Node *const node) {
 
   const int fr_piece = lazy.arg0;
   const int fr       = lazy.arg1;
@@ -1200,7 +1207,7 @@ void net_move(Node *const node) {
 /*}}}*/
 /*{{{  net_capture*/
 
-void net_capture(Node *const node) {
+HOT void net_capture(Node *const node) {
 
   const int fr_piece = lazy.arg0;
   const int fr       = lazy.arg1;
@@ -1232,7 +1239,7 @@ void net_capture(Node *const node) {
 /*}}}*/
 /*{{{  net_promo_push*/
 
-void net_promo_push (Node *const node) {
+HOT void net_promo_push (Node *const node) {
 
   const int pawn_piece    = lazy.arg0;
   const int pawn_fr       = lazy.arg1;
@@ -1261,7 +1268,7 @@ void net_promo_push (Node *const node) {
 /*}}}*/
 /*{{{  net_promo_capture*/
 
-void net_promo_capture (Node *const node) {
+HOT void net_promo_capture (Node *const node) {
 
   const int pawn_piece    = lazy.arg0;
   const int pawn_fr       = lazy.arg1;
@@ -1294,7 +1301,7 @@ void net_promo_capture (Node *const node) {
 /*}}}*/
 /*{{{  net_ep_capture*/
 
-void net_ep_capture (Node *const node) {
+HOT void net_ep_capture (Node *const node) {
 
   const int pawn_piece     = lazy.arg0;
   const int pawn_fr        = lazy.arg1;
@@ -1328,7 +1335,7 @@ void net_ep_capture (Node *const node) {
 /*}}}*/
 /*{{{  net_castle*/
 
-void net_castle (Node *const node) {
+HOT void net_castle (Node *const node) {
 
   const int king_piece = lazy.arg0;
   const int king_fr_sq = lazy.arg1;
@@ -1369,7 +1376,7 @@ void net_castle (Node *const node) {
 
 /*{{{  reset_hash_history*/
 
-void reset_hash_history(const int n) {
+HOT void reset_hash_history(const int n) {
 
   hh.num_uci_moves = n;
 
@@ -1378,7 +1385,7 @@ void reset_hash_history(const int n) {
 /*}}}*/
 /*{{{  update_hash_history*/
 
-void update_hash_history(const Position *const pos, const int ply) {
+HOT void update_hash_history(const Position *const pos, const int ply) {
 
   hh.hash[min(1023, hh.num_uci_moves + ply)] = pos->hash;
 
@@ -1472,7 +1479,7 @@ void rank_quiet(Node *const node) {
 
 /*{{{  magic_index*/
 
-int magic_index(const uint64_t blockers, const uint64_t magic, const int shift) {
+INLINE_HOT int magic_index(const uint64_t blockers, const uint64_t magic, const int shift) {
 
   return (int)((blockers * magic) >> shift);
 
@@ -1864,7 +1871,7 @@ void init_rights_masks(void) {
 /*}}}*/
 /*{{{  is_attacked*/
 
-int is_attacked(const Position *const pos, const int sq, const int opp) {
+HOT int is_attacked(const Position *const pos, const int sq, const int opp) {
 
   const int base = colour_index(opp);
 
@@ -2354,7 +2361,7 @@ void remove_tt_move(Node *const node) {
 /*}}}*/
 /*{{{  get_next_sorted_move*/
 
-move_t get_next_sorted_move(Node *const node) {
+INLINE_HOT move_t get_next_sorted_move(Node *const node) {
 
   move_t max_m         = 0;
   move_t *const moves  = node->moves;
@@ -2398,7 +2405,7 @@ void init_next_search_move(Node *const node, const uint8_t in_check, const move_
 /*}}}*/
 /*{{{  get_next_search_move*/
 
-move_t get_next_search_move(Node *const node) {
+HOT move_t get_next_search_move(Node *const node) {
 
   switch (node->stage) {
 
@@ -2497,7 +2504,7 @@ void init_next_qsearch_move(Node *const node, const move_t tt_move) {
 /*}}}*/
 /*{{{  get_next_qsearch_move*/
 
-move_t get_next_qsearch_move(Node *const node) {
+HOT move_t get_next_qsearch_move(Node *const node) {
 
   switch (node->stage) {
 
@@ -2585,7 +2592,7 @@ void init_next_perft_move(Node *const node, const int in_check) {
 
 /*{{{  post_move*/
 
-void post_move(Position *const pos) {
+HOT void post_move(Position *const pos) {
 
   int rights     = pos->rights;
   int ep         = pos->ep;
@@ -2615,14 +2622,14 @@ void post_move(Position *const pos) {
   pos->stm    ^= 1;
   pos->rights = (uint8_t)rights;
   pos->ep     = (uint8_t)ep;
-  pos->hmc    = min(UINT8_MAX, pos->hmc + 1);
+  pos->hmc    += 1;
 
 }
 
 /*}}}*/
 /*{{{  pre_move*/
 
-void pre_move(Position *const pos, const move_t move) {
+HOT void pre_move(Position *const pos, const move_t move) {
 
   const int stm        = pos->stm;
   const int from       = (move >> 6) & 0x3F;
@@ -2646,7 +2653,7 @@ void pre_move(Position *const pos, const move_t move) {
 
 /*{{{  post_capture*/
 
-void post_capture(Position *const pos) {
+HOT void post_capture(Position *const pos) {
 
   int rights    = pos->rights;
   int ep        = pos->ep;
@@ -2684,7 +2691,7 @@ void post_capture(Position *const pos) {
 /*}}}*/
 /*{{{  pre_capture*/
 
-void pre_capture(Position *const pos, const move_t move) {
+HOT void pre_capture(Position *const pos, const move_t move) {
 
   uint64_t *const RESTRICT colour = pos->colour;
   uint64_t *const RESTRICT all    = pos->all;
@@ -2719,7 +2726,7 @@ void pre_capture(Position *const pos, const move_t move) {
 
 /*{{{  post_push*/
 
-void post_push(Position *const pos) {
+HOT void post_push(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -2750,7 +2757,7 @@ void post_push(Position *const pos) {
 /*}}}*/
 /*{{{  pre_push*/
 
-void pre_push(Position *const pos, const move_t move) {
+HOT void pre_push(Position *const pos, const move_t move) {
 
   const int stm        = pos->stm;
   const int from       = (move >> 6) & 0x3F;
@@ -2774,7 +2781,7 @@ void pre_push(Position *const pos, const move_t move) {
 
 /*{{{  post_ep_capture*/
 
-void post_ep_capture(Position *const pos) {
+HOT void post_ep_capture(Position *const pos) {
 
   uint8_t *const RESTRICT board = pos->board;
 
@@ -2810,7 +2817,7 @@ void post_ep_capture(Position *const pos) {
 /*}}}*/
 /*{{{  pre_ep_capture*/
 
-void pre_ep_capture(Position *const pos, const move_t move) {
+HOT void pre_ep_capture(Position *const pos, const move_t move) {
 
   uint64_t *const RESTRICT all    = pos->all;
   uint64_t *const RESTRICT colour = pos->colour;
@@ -2847,7 +2854,7 @@ void pre_ep_capture(Position *const pos, const move_t move) {
 
 /*{{{  post_castle*/
 
-void post_castle(Position *const pos) {
+HOT void post_castle(Position *const pos) {
 
   uint8_t *const board = pos->board;
 
@@ -2885,14 +2892,14 @@ void post_castle(Position *const pos) {
   pos->stm    ^= 1;
   pos->rights = (uint8_t)rights;
   pos->ep     = (uint8_t)ep;
-  pos->hmc    = min(UINT8_MAX, pos->hmc + 1);
+  pos->hmc    += 1;
 
 }
 
 /*}}}*/
 /*{{{  pre_castle*/
 
-void pre_castle(Position *const pos, const move_t move) {
+HOT void pre_castle(Position *const pos, const move_t move) {
 
   uint64_t *const all    = pos->all;
   uint64_t *const colour = pos->colour;
@@ -2931,7 +2938,7 @@ void pre_castle(Position *const pos, const move_t move) {
 
 /*{{{  post_promo_push*/
 
-void post_promo_push(Position *const pos) {
+HOT void post_promo_push(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -2962,7 +2969,7 @@ void post_promo_push(Position *const pos) {
 /*}}}*/
 /*{{{  pre_promo_push*/
 
-void pre_promo_push(Position *const pos, const move_t move) {
+HOT void pre_promo_push(Position *const pos, const move_t move) {
 
   uint64_t *const all    = pos->all;
   uint64_t *const colour = pos->colour;
@@ -2995,7 +3002,7 @@ void pre_promo_push(Position *const pos, const move_t move) {
 
 /*{{{  post_promo_capture*/
 
-void post_promo_capture(Position *const pos) {
+HOT void post_promo_capture(Position *const pos) {
 
   int rights    = pos->rights;
   int ep        = pos->ep;
@@ -3033,7 +3040,7 @@ void post_promo_capture(Position *const pos) {
 /*}}}*/
 /*{{{  pre_promo_capture*/
 
-void pre_promo_capture(Position *const pos, const move_t move) {
+HOT void pre_promo_capture(Position *const pos, const move_t move) {
 
   uint64_t *const RESTRICT all    = pos->all;
   uint64_t *const RESTRICT colour = pos->colour;
@@ -3092,7 +3099,7 @@ void init_move_funcs(void) {
 /*}}}*/
 /*{{{  make_move_pre*/
 
-void make_move_pre(Position *const pos, const move_t move) {
+HOT void make_move_pre(Position *const pos, const move_t move) {
 
   const int mt = (move >> 12) & 0xF;
 
@@ -3127,7 +3134,7 @@ void make_move_pre(Position *const pos, const move_t move) {
 // Call the _post func set up by the _pre_func.
 //
 
-void make_move_post(Position *const pos) {
+HOT void make_move_post(Position *const pos, const move_t move) {
 
   lazy.post_func(pos);
 
@@ -3138,7 +3145,7 @@ void make_move_post(Position *const pos) {
 
 /*{{{  make_null_move*/
 
-void make_null_move(Position *const pos) {
+HOT void make_null_move(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -3316,7 +3323,7 @@ void init_zob(void) {
 /*}}}*/
 /*{{{  mat_draw*/
 
-int mat_draw(const Position *const pos) {
+HOT int mat_draw(const Position *const pos) {
 
   const uint64_t *const a = pos->all;
   const int num_pieces    = popcount(pos->occupied);
@@ -3334,7 +3341,7 @@ int mat_draw(const Position *const pos) {
 /*}}}*/
 /*{{{  eval*/
 
-int eval(Node *const node) {
+HOT int eval(Node *const node) {
 
   if (mat_draw(&node->pos))
     return 0;
@@ -3364,7 +3371,7 @@ void play_move(Node *const node, char *uci_move) {
     format_move(move, buf);
     if (!strcmp(uci_move, buf)) {
       make_move_pre(pos, move);
-      make_move_post(pos);
+      make_move_post(pos, move);
       net_update_accs(node);
       return;
     }
@@ -3509,7 +3516,7 @@ void et (void) {
 /*}}}*/
 /*{{{  probably_legal*/
 
-move_t probably_legal(const Position *const pos, move_t move) {
+HOT move_t probably_legal(const Position *const pos, move_t move) {
 
   if (!move) {
     return 0;
@@ -3566,9 +3573,6 @@ int is_draw(const Position *const pos, const int ply) {
 
   while (idx >= limit) {
 
-    assert(idx >= 0);
-    assert(idx < 1024);
-
     if (h0 == h[idx]) {
       /*{{{  rep*/
       
@@ -3596,7 +3600,7 @@ int is_draw(const Position *const pos, const int ply) {
 /*}}}*/
 /*{{{  pos_copy*/
 
-void pos_copy(const Position *const from_pos, Position *const to_pos) {
+INLINE_HOT void pos_copy(const Position *const from_pos, Position *const to_pos) {
 
   *to_pos = *from_pos;
 
@@ -3682,15 +3686,13 @@ int see_ge(const Position *const pos, const move_t move, int threshold) {
   if (!lut(lut_see, move))
     return 1;
 
-  const int stm     = pos->stm;
-  const int from_sq = (move >> 6) & 0x3F;
-  const int to_sq   = move & 0x3F;
-  int attacker      = pos->board[from_sq];
-  const int target  = pos->board[to_sq];
+  const int stm      = pos->stm;
+  const int from_sq  = (move >> 6) & 0x3F;
+  const int to_sq    = move & 0x3F;
+  int attacker_piece = pos->board[from_sq];
+  const int target   = pos->board[to_sq];
 
-  assert(target != EMPTY);
-
-  if (see_values[target] - see_values[attacker] >= threshold)
+  if (see_values[target] - see_values[attacker_piece] >= threshold)
     return 1;
 
   uint64_t used           = 0ULL;
@@ -3710,7 +3712,7 @@ int see_ge(const Position *const pos, const move_t move, int threshold) {
   do {
 
     d++;
-    gain[d] = see_values[attacker] - gain[d-1];
+    gain[d] = see_values[attacker_piece] - gain[d-1];
 
     if ((gain[d] < 0) && (-gain[d-1] < 0))
       break;
@@ -3728,7 +3730,7 @@ int see_ge(const Position *const pos, const move_t move, int threshold) {
       bish_atk = bishop_attackers_to(pos, occ, to_sq);
 
     attadef  = (stat_atk | rook_atk | bish_atk) & ~used;
-    from_set = get_least_valuable_piece(pos, attadef, (stm ^ (d & 1)), &attacker);
+    from_set = get_least_valuable_piece(pos, attadef, (stm ^ (d & 1)), &attacker_piece);
 
   } while (from_set);
 
@@ -3773,15 +3775,13 @@ void collect_pv(Node *const this_node, const Node *const next_node, const move_t
 
 int qsearch(const int ply, int alpha, const int beta) {
 
-  assert(ply < MAX_PLY);
-
   Node *const RESTRICT this_node = &ss[ply];
   const Position *const this_pos = &this_node->pos;
   this_node->pv_len = 0;
 
   /*{{{  run out of ply*/
   
-  if (ply == SAFE_PLY) {
+  if (ply >= MAX_PLY) {
   
     return eval(this_node);
   
@@ -3861,7 +3861,7 @@ int qsearch(const int ply, int alpha, const int beta) {
     if (is_attacked(next_pos, bsf(*next_stm_king_ptr), opp))
       continue;
     
-    make_move_post(next_pos);
+    make_move_post(next_pos, move);
     net_copy(this_node, next_node);
     net_update_accs(next_node);
     
@@ -3887,15 +3887,13 @@ int qsearch(const int ply, int alpha, const int beta) {
 
 int search(const int ply, int depth, int alpha, const int beta) {
 
-  assert(ply < MAX_PLY);
-
   Node *const RESTRICT this_node = &ss[ply];
   const Position *const this_pos = &this_node->pos;
   this_node->pv_len              = 0;
 
   /*{{{  run out of ply*/
   
-  if (ply == SAFE_PLY) {
+  if (ply >= MAX_PLY) {
   
     return eval(this_node);
   
@@ -3992,7 +3990,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
   /*}}}*/
   /*{{{  nmp*/
   
-  if (!is_pv && !in_check && depth > 1 && ev > beta && !is_pawn_endgame(this_pos)) {
+  if (!is_pv && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(this_pos)) {
   
     r = 3;
   
@@ -4059,7 +4057,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
     if (is_attacked(next_pos, bsf(*next_stm_king_ptr), opp))
       continue;
     
-    make_move_post(next_pos);
+    make_move_post(next_pos, move);
     net_copy(this_node, next_node);
     net_update_accs(next_node);
     update_hash_history(next_pos, ply+1);
@@ -4319,27 +4317,6 @@ void bench (void) {
 /*}}}*/
 
 /*}}}*/
-/*{{{  threads*/
-
-pthread_t search_thread;
-_Atomic int search_running = 0;
-
-void *go_thread_fn(void *arg) {
-  (void)arg;
-  go();
-  atomic_store(&search_running, 0);
-  return NULL;
-}
-
-void join_search_if_running(void) {
-  if (atomic_load(&search_running)) {
-    atomic_store(&tc.finished, 1);
-    pthread_join(search_thread, NULL);
-    atomic_store(&search_running, 0);
-  }
-}
-
-/*}}}*/
 /*{{{  perft*/
 
 /*{{{  perft*/
@@ -4454,13 +4431,11 @@ void perft_tests (void) {
 
 int init_once(void) {
 
-  assert(INT16_MIN < -MAX_HISTORY);
+  assert(INT16_MIN < -MAX_HISTORY && "init_once: max history");
 
   memset(ss, 0, sizeof(ss));
 
-#ifndef NDEBUG
   uint64_t start_ms = now_ms();
-#endif
 
   init_line_masks();
   init_move_funcs();
@@ -4474,17 +4449,12 @@ int init_once(void) {
   init_rook_attacks();
   init_king_attacks();
 
-#ifndef NDEBUG
-  uint64_t elapsed_ms = now_ms() - start_ms;
-  printf("init %zu\n", elapsed_ms);
-#endif
-
   if (init_weights())
     return 1;
 
-  assert(sizeof(Node)%64 == 0);
-  assert(sizeof(Position)%64 == 0);
-  assert(sizeof(Attack)%64 == 0);
+  uint64_t elapsed_ms = now_ms() - start_ms;
+
+  //printf("%lu %lu\n", sizeof(Node)%64, sizeof(Position)%64); //hack
 
   ASSERT_ALIGNED64(raw_attacks);
   ASSERT_ALIGNED64(ss);
@@ -4496,6 +4466,8 @@ int init_once(void) {
   ASSERT_ALIGNED64(net_h2_w);
   ASSERT_ALIGNED64(net_h1_b);
   ASSERT_ALIGNED64(net_o_w);
+
+  //printf("info init_once %" PRIu64 "ms\n", elapsed_ms);
 
   return 0;
 
@@ -4636,25 +4608,7 @@ int uci_tokens(int num_tokens, char **tokens) {
     
     tc_init(wtime, winc, btime, binc, max_nodes, move_time, max_depth, moves_to_go);
     
-    atomic_store(&tc.finished, 0);
-    join_search_if_running();
-    
-    if (pthread_create(&search_thread, NULL, go_thread_fn, NULL) == 0) {
-      atomic_store(&search_running, 1);
-    }
-    else {
-      go();
-    }
-    
-    /*}}}*/
-  }
-  else if (!strcmp(cmd, "stop")) {
-    /*{{{  stop*/
-    
-    atomic_store(&tc.finished, 1);
-    join_search_if_running();
-    
-    tc.finished = 1;
+    go();
     
     /*}}}*/
   }
@@ -4759,9 +4713,6 @@ int uci_tokens(int num_tokens, char **tokens) {
   }
   else if (!strcmp(cmd, "quit") || !strcmp(cmd, "q")) {
     /*{{{  quit*/
-    
-    atomic_store(&tc.finished, 1);
-    join_search_if_running();
     
     return 1;
     
