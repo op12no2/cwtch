@@ -1,5 +1,5 @@
 # Cwtch
-A C version of my Javascript chess engine [Lozza 7's](https://github.com/op12no2/lozza) that uses the same (768->256)x2->1 network.
+A C version of my Javascript chess engine [Lozza](https://github.com/op12no2/lozza) that uses the same (768->256)x2->1 network.
 
 Like Lozza, the code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
