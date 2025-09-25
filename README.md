@@ -1,9 +1,7 @@
 # Cwtch
-A chess engine written in C. UCI protocol. Reads/writes stdin/stdout. Use a chess user interface to play against it.
+A C version of my Javascript chess engine Lozza that uses the same (768->256)x2->1 network.
 
-Needs ```cwtch.c```, ```weights.h``` and ```makefile``` to make. Currently compiles OK under Linux and MSYS2 UCRT64 on Windows.  See latest commit for correct bench available via ```./cwtch bench quit```.
-
-The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
+Like Lozza, the code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
 Cwtch means hug/cuddle in Welsh and is pronounced cutch with a very short u like in put - ish.
 
