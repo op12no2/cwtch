@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "26"
+#define BUILD "27"
 
 /*{{{  includes*/
 
@@ -4297,7 +4297,12 @@ void go(void) {
     uint64_t elapsed_ms = end_ms - tc.start_time;
     uint64_t nps        = (tc.nodes * 1000ULL) / (elapsed_ms ? elapsed_ms : 1);
     
-    printf("info depth %d score cp %d time %" PRIu64 " nodes %" PRIu64 " nps %" PRIu64 " pv %s\n", depth, tc.bs, elapsed_ms, tc.nodes, nps, pv_str);
+    if (abs(tc.bs) < MATE_LIMIT)
+      printf("info depth %d score cp %d time %" PRIu64 " nodes %" PRIu64 " nps %" PRIu64 " pv %s\n", depth, tc.bs, elapsed_ms, tc.nodes, nps, pv_str);
+    else {
+      const int mate_score = max(1, (tc.bs < 0) ? (tc.bs - MATE) / 2 : (MATE - tc.bs) / 2);
+      printf("info depth %d score mate %d time %" PRIu64 " nodes %" PRIu64 " nps %" PRIu64 " pv %s\n", depth, mate_score, elapsed_ms, tc.nodes, nps, pv_str);
+    }
     
     /*}}}*/
 
