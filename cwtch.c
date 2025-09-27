@@ -1,6 +1,6 @@
 
 #define VERSION "3"
-#define BUILD "24"
+#define BUILD "25"
 
 /*{{{  includes*/
 
@@ -4740,6 +4740,13 @@ int uci_tokens(int num_tokens, char **tokens) {
     const int e = eval(&ss[0]);
     
     printf("%d\n", e);
+    
+    /*}}}*/
+  }
+  else if (!strcmp(cmd, "build")) {
+    /*{{{  build*/
+    
+    printf("%s\n", BUILD);
     
     /*}}}*/
   }
