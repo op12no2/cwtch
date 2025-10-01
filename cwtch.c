@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "27"
+#define BUILD "29"
 
 /*{{{  includes*/
 
@@ -63,8 +63,7 @@
 
 #define MAGIC_MAX_SLOTS 4096
 
-#define NET_H1_SIZE 256
-#define NET_H1_SHIFT 8
+#define NET_H1_SIZE 384
 #define NET_I_SIZE 768
 #define NET_QA 255
 #define NET_QB 64
@@ -931,7 +930,7 @@ TT *tt_get(const Position *const pos) {
 
 int net_base(const int piece, const int sq) {
 
-  return (((piece << 6) | sq) << NET_H1_SHIFT);
+  return (((piece << 6) | sq) * NET_H1_SIZE);
 
 }
 
@@ -1059,17 +1058,17 @@ int init_weights(void) {
   int16_t *weights = NULL;
   size_t n = 0;
 
-  if (!get_embedded_weights(&weights, &n)) {
+  //if (!get_embedded_weights(&weights, &n)) {
+    //free(weights);
+    //fprintf(stderr, "cannot load embedded weights\n");
+    //return 1;
+  //}
+
+  if (get_weights("/home/xyzzy/lozza/nets/fujia/lozza-750/quantised.bin", &weights, &n) == 0) {
     free(weights);
-    fprintf(stderr, "cannot load embedded weights\n");
+    fprintf(stderr, "cannot load weights file\n");
     return 1;
   }
-
-  //if (get_weights("/home/xyzzy/lozza/nets/farm1/lozza-500/quantised.bin", &weights, &n) == 0) {
-  //  free(weights);
-  //  fprintf(stderr, "cannot load weights file\n");
-  //  return 1;
-  //}
 
   size_t offset = 0;
 
@@ -2605,9 +2604,9 @@ void init_next_perft_move(Node *const node, const int in_check) {
 
 void post_move(Position *const pos) {
 
-  int rights     = pos->rights;
-  int ep         = pos->ep;
-  uint64_t hash  = pos->hash;
+  int rights    = pos->rights;
+  int ep        = pos->ep;
+  uint64_t hash = pos->hash;
 
   const int from_piece = lazy.arg0;
   const int from       = lazy.arg1;
@@ -2813,7 +2812,7 @@ void post_ep_capture(Position *const pos) {
   hash ^= zob_pieces[zob_base | from] ^ zob_pieces[zob_base | to] ^ zob_pieces[(opp_pawn << 6) | pawn_sq];
 
   hash ^= zob_ep[ep];
-  ep = 0;
+  ep   = 0;
   hash ^= zob_ep[ep];
 
   hash ^= zob_stm;
@@ -2890,7 +2889,7 @@ void post_castle(Position *const pos) {
   hash ^= zob_pieces[zob_base_k | from] ^ zob_pieces[zob_base_k | to] ^ zob_pieces[zob_base_r | rook_from_sq] ^ zob_pieces[zob_base_r | rook_to_sq];
 
   hash ^= zob_ep[ep];
-  ep = 0;
+  ep   = 0;
   hash ^= zob_ep[ep];
 
   hash   ^= zob_rights[rights];
@@ -3797,7 +3796,7 @@ int qsearch(const int ply, int alpha, const int beta) {
 
   Node *const RESTRICT this_node = &ss[ply];
   const Position *const this_pos = &this_node->pos;
-  this_node->pv_len = 0;
+  this_node->pv_len              = 0;
 
   /*{{{  run out of ply*/
   
@@ -4028,8 +4027,6 @@ int search(const int ply, int depth, int alpha, const int beta) {
     if (tc.finished)
       return 0;
   
-    this_node->pv_len = 0;
-  
   }
   
   /*}}}*/
@@ -4042,6 +4039,9 @@ int search(const int ply, int depth, int alpha, const int beta) {
     if (score <= alpha) {
       return score;
     }
+  
+    this_node->pv_len = 0;
+    this_node->ev     = ev;
   
   }
   
