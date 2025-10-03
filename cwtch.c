@@ -1058,17 +1058,17 @@ int init_weights(void) {
   int16_t *weights = NULL;
   size_t n = 0;
 
-  //if (!get_embedded_weights(&weights, &n)) {
-    //free(weights);
-    //fprintf(stderr, "cannot load embedded weights\n");
-    //return 1;
-  //}
-
-  if (get_weights("/home/xyzzy/lozza/nets/fujia/lozza-750/quantised.bin", &weights, &n) == 0) {
+  if (!get_embedded_weights(&weights, &n)) {
     free(weights);
-    fprintf(stderr, "cannot load weights file\n");
+    fprintf(stderr, "cannot load embedded weights\n");
     return 1;
   }
+
+  //if (get_weights("/home/xyzzy/lozza/nets/fujia/lozza-750/quantised.bin", &weights, &n) == 0) {
+    //free(weights);
+    //fprintf(stderr, "cannot load weights file\n");
+    //return 1;
+  //}
 
   size_t offset = 0;
 
