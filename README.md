@@ -25,6 +25,8 @@ pt - perform a series of PERFT searches.
 et - perform a series of eval tests.
 
 build - display the build number.
+
+net - display the network size.
 ```
 
 ## Acknowledgements
