@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "29"
+#define BUILD "30"
 
 /*{{{  includes*/
 
@@ -53,8 +53,8 @@
 /*}}}*/
 /*{{{  constants*/
 
-#define MAX_PLY 128
-#define SAFE_PLY 126
+#define MAX_PLY 64
+#define SAFE_PLY (MAX_PLY - 2)
 #define MAX_MOVES 256
 
 #define INF  30000
@@ -71,7 +71,7 @@
 #define NET_SCALE 400
 
 #define UCI_LINE_LENGTH 8192
-#define UCI_TOKENS      8192
+#define UCI_TOKENS      1024
 
 #define WHITE_RIGHTS_KING  1
 #define WHITE_RIGHTS_QUEEN 2
@@ -751,6 +751,8 @@ void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t m
   if (!moves_to_go)
     moves_to_go = 20;
 
+  moves_to_go = max(2, moves_to_go); // thanks @eric
+
   if (!max_depth)
     max_depth = MAX_PLY;
 
@@ -1387,6 +1389,15 @@ void update_hash_history(const Position *const pos, const int ply) {
 
 /*}}}*/
 
+/*{{{  reset_piece_to_history*/
+
+void reset_piece_to_history(void) {
+
+  memset(piece_to_history, 0, sizeof(piece_to_history));
+
+}
+
+/*}}}*/
 /*{{{  age_piece_to_history*/
 
 void age_piece_to_history() {
@@ -3504,7 +3515,7 @@ void position(Node *const node, const char *board_fen, const char *stm_str, cons
   
   /*}}}*/
 
-  memset(piece_to_history, 0, sizeof(piece_to_history));
+  reset_piece_to_history();
 
 }
 
@@ -4745,6 +4756,13 @@ int uci_tokens(int num_tokens, char **tokens) {
     const int e = eval(&ss[0]);
     
     printf("%d\n", e);
+    
+    /*}}}*/
+  }
+  else if (!strcmp(cmd, "net") || !strcmp(cmd, "n")) {
+    /*{{{  net*/
+    
+    printf("(%d -> %d)x2 -> 1\n", NET_I_SIZE, NET_H1_SIZE);
     
     /*}}}*/
   }
