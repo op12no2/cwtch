@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "30"
+#define BUILD "31"
 
 /*{{{  includes*/
 
@@ -292,55 +292,55 @@ typedef struct {
 /*}}}*/
 /*{{{  data*/
 
-Mover move_funcs[16];
+static Mover move_funcs[16];
 
-uint64_t rand64_seed = 0xDEADBEEFCAFEBABEULL;
+static uint64_t rand64_seed = 0xDEADBEEFCAFEBABEULL;
 
-ALIGN64 uint64_t raw_attacks[107648];
-ALIGN64 uint64_t pawn_attacks[2][64];
-ALIGN64 uint64_t knight_attacks[64];
-ALIGN64 uint64_t king_attacks[64];
+static ALIGN64 uint64_t raw_attacks[107648];
+static ALIGN64 uint64_t pawn_attacks[2][64];
+static ALIGN64 uint64_t knight_attacks[64];
+static ALIGN64 uint64_t king_attacks[64];
 
-ALIGN64 Attack bishop_attacks[64];
-ALIGN64 Attack rook_attacks[64];
+static ALIGN64 Attack bishop_attacks[64];
+static ALIGN64 Attack rook_attacks[64];
 
-ALIGN64 Node ss[MAX_PLY];
+static ALIGN64 Node ss[MAX_PLY];
 
-TimeControl tc;
-Lazy lazy;
+static TimeControl tc;
+static Lazy lazy;
 
-ALIGN64 HashHistory hh;
+static ALIGN64 HashHistory hh;
 
-ALIGN64 TT *tt    = NULL;
-size_t tt_entries = 0;
-size_t tt_mask    = 0;
+static ALIGN64 TT *tt    = NULL;
+static size_t tt_entries = 0;
+static size_t tt_mask    = 0;
 
-const uint8_t lut_see[16]     = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0};
-const uint8_t lut_prune[16]   = {1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t lut_history[16] = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
-const uint8_t lut_killer[16]  = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t lut_see[16]     = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0};
+static const uint8_t lut_prune[16]   = {1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t lut_history[16] = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
+static const uint8_t lut_killer[16]  = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
 
-ALIGN64 uint64_t zob_pieces[12 * 64];
-ALIGN64 uint64_t zob_stm;
-ALIGN64 uint64_t zob_rights[16];
-ALIGN64 uint64_t zob_ep[64];
+static ALIGN64 uint64_t zob_pieces[12 * 64];
+static ALIGN64 uint64_t zob_stm;
+static ALIGN64 uint64_t zob_rights[16];
+static ALIGN64 uint64_t zob_ep[64];
 
-ALIGN64 int32_t net_h1_w[NET_I_SIZE * NET_H1_SIZE];
-ALIGN64 int32_t net_h2_w[NET_I_SIZE * NET_H1_SIZE];  // flipped
-ALIGN64 int32_t net_h1_b[NET_H1_SIZE];
-ALIGN64 int32_t net_o_w [NET_H1_SIZE * 2];
-ALIGN64 int32_t net_o_b;
+static ALIGN64 int32_t net_h1_w[NET_I_SIZE * NET_H1_SIZE];
+static ALIGN64 int32_t net_h2_w[NET_I_SIZE * NET_H1_SIZE];  // flipped
+static ALIGN64 int32_t net_h1_b[NET_H1_SIZE];
+static ALIGN64 int32_t net_o_w [NET_H1_SIZE * 2];
+static ALIGN64 int32_t net_o_b;
 
-const int see_values[12] = {100, 325, 325, 500, 1000, 0, 100, 325, 325, 500, 1000, 0};
-const int orth_offset[2] = {8, -8};
-const int rook_to[64]    = {[G1] = F1, [C1] = D1, [G8] = F8, [C8] = D8};
-const int rook_from[64]  = {[G1] = H1, [C1] = A1, [G8] = H8, [C8] = A8};
+static const int see_values[12] = {100, 325, 325, 500, 1000, 0, 100, 325, 325, 500, 1000, 0};
+static const int orth_offset[2] = {8, -8};
+static const int rook_to[64]    = {[G1] = F1, [C1] = D1, [G8] = F8, [C8] = D8};
+static const int rook_from[64]  = {[G1] = H1, [C1] = A1, [G8] = H8, [C8] = A8};
 
-int rights_masks[64];
+static int rights_masks[64];
 
 /*{{{  perft data*/
 
-const Perft perft_data[] = {
+static const Perft perft_data[] = {
 
   {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",             "w", "KQkq", "-",  0, 1,         "cpw-pos1-0"},
   {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",             "w", "KQkq", "-",  1, 20,        "cpw-pos1-1"},
@@ -413,7 +413,7 @@ const Perft perft_data[] = {
 /*}}}*/
 /*{{{  bench data*/
 
-const Bench bench_data[] = {
+static const Bench bench_data[] = {
 
   {"r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R", "w", "KQkq", "a6"},
   {"4rrk1/2p1b1p1/p1p3q1/4p3/2P2n1p/1P1NR2P/PB3PP1/3R1QK1", "b", "-", "-"},
@@ -470,12 +470,12 @@ const Bench bench_data[] = {
 
 /*}}}*/
 
-ALIGN64 int16_t piece_to_history[12][64];
+static ALIGN64 int16_t piece_to_history[12][64];
 
-ALIGN64 uint64_t rank_mask[64];
-ALIGN64 uint64_t file_mask[64];
-ALIGN64 uint64_t diag_mask[64];
-ALIGN64 uint64_t anti_mask[64];
+static ALIGN64 uint64_t rank_mask[64];
+static ALIGN64 uint64_t file_mask[64];
+static ALIGN64 uint64_t diag_mask[64];
+static ALIGN64 uint64_t anti_mask[64];
 
 /*}}}*/
 
@@ -483,7 +483,7 @@ ALIGN64 uint64_t anti_mask[64];
 
 /*{{{  now_ms*/
 
-uint64_t now_ms(void) {
+static inline uint64_t now_ms(void) {
 
   struct timespec ts;
 
@@ -495,7 +495,7 @@ uint64_t now_ms(void) {
 /*}}}*/
 /*{{{  popcount*/
 
-int popcount(const uint64_t bb) {
+static inline int popcount(const uint64_t bb) {
 
   return __builtin_popcountll(bb);
 
@@ -504,7 +504,7 @@ int popcount(const uint64_t bb) {
 /*}}}*/
 /*{{{  encode_move*/
 
-move_t encode_move(const int from, const int to, const int flags) {
+static inline move_t encode_move(const int from, const int to, const int flags) {
 
   return (from << 6) | to | flags;
 
@@ -513,7 +513,7 @@ move_t encode_move(const int from, const int to, const int flags) {
 /*}}}*/
 /*{{{  bsf*/
 
-int bsf(const uint64_t bb) {
+static inline int bsf(const uint64_t bb) {
 
   return __builtin_ctzll(bb);
 
@@ -522,7 +522,7 @@ int bsf(const uint64_t bb) {
 /*}}}*/
 /*{{{  rand64*/
 
-uint64_t rand64(void) {
+static uint64_t rand64(void) {
 
   rand64_seed ^= rand64_seed >> 12;
   rand64_seed ^= rand64_seed << 25;
@@ -535,7 +535,7 @@ uint64_t rand64(void) {
 /*}}}*/
 /*{{{  piece_index*/
 
-int piece_index(const int piece, const int colour) {
+static inline int piece_index(const int piece, const int colour) {
 
   return piece + colour * 6;
 
@@ -544,7 +544,7 @@ int piece_index(const int piece, const int colour) {
 /*}}}*/
 /*{{{  colour_index*/
 
-int colour_index(const int colour) {
+static inline int colour_index(const int colour) {
 
   return colour * 6;
 
@@ -553,7 +553,7 @@ int colour_index(const int colour) {
 /*}}}*/
 /*{{{  print_bb*/
 
-void print_bb(const uint64_t bb, const char *tag) {
+static void print_bb(const uint64_t bb, const char *tag) {
 
   printf("%s\n", tag);
 
@@ -579,7 +579,7 @@ void print_bb(const uint64_t bb, const char *tag) {
 /*}}}*/
 /*{{{  format_move*/
 
-int format_move(const move_t move, char *const buf) {
+static int format_move(const move_t move, char *const buf) {
 
   static const char files[] = "abcdefgh";
   static const char ranks[] = "12345678";
@@ -607,7 +607,7 @@ int format_move(const move_t move, char *const buf) {
 /*}}}*/
 /*{{{  print_board*/
 
-void print_board(Node *const node) {
+static void print_board(Node *const node) {
 
   const Position *const pos = &node->pos;
 
@@ -650,7 +650,7 @@ void print_board(Node *const node) {
 /*}}}*/
 /*{{{  find_token*/
 
-int find_token(const char *token, int n, char **tokens) {
+static int find_token(const char *token, int n, char **tokens) {
 
   for (int i=0; i < n; i++) {
     if (!strcmp(token, tokens[i]))
@@ -664,7 +664,7 @@ int find_token(const char *token, int n, char **tokens) {
 /*}}}*/
 /*{{{  zob_index*/
 
-int zob_index(const int piece, const int sq) {
+static inline int zob_index(const int piece, const int sq) {
 
   return (piece << 6) | sq;
 
@@ -673,7 +673,7 @@ int zob_index(const int piece, const int sq) {
 /*}}}*/
 /*{{{  sqrrelu*/
 
-int32_t sqrelu(const int32_t x) {
+static inline int32_t sqrelu(const int32_t x) {
 
   const int32_t y = x & ~(x >> 31);
 
@@ -684,7 +684,7 @@ int32_t sqrelu(const int32_t x) {
 /*}}}*/
 /*{{{  init_line_masks*/
 
-void init_line_masks(void) {
+static void init_line_masks(void) {
 
   for (int sq=0; sq < 64; sq++) {
 
@@ -717,7 +717,7 @@ void init_line_masks(void) {
 /*}}}*/
 /*{{{  lut*/
 
-uint8_t lut(const uint8_t *const this_lut, const move_t move) {
+static inline uint8_t lut(const uint8_t *const this_lut, const move_t move) {
 
   return this_lut[(move >> 12) & 0xF];
 
@@ -730,7 +730,7 @@ uint8_t lut(const uint8_t *const this_lut, const move_t move) {
 
 /*{{{  tc_init*/
 
-void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t max_nodes, int64_t move_time, int max_depth, int moves_to_go) {
+static void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t max_nodes, int64_t move_time, int max_depth, int moves_to_go) {
 
   if (wtime < 0) wtime = 0;
   if (winc < 0) winc = 0;
@@ -783,7 +783,7 @@ void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t m
 /*}}}*/
 /*{{{  check_tc*/
 
-void check_tc(void) {
+static void check_tc(void) {
 
   if (tc.finished)
     return;
@@ -814,7 +814,7 @@ void check_tc(void) {
 
 /*{{{  init_tt*/
 
-int init_tt(size_t megabytes) {
+static int init_tt(size_t megabytes) {
 
   if (megabytes < 1)
     megabytes = 1;
@@ -848,7 +848,7 @@ int init_tt(size_t megabytes) {
 /*}}}*/
 /*{{{  tt_reset*/
 
-void tt_reset(void) {
+static void tt_reset(void) {
 
   memset(tt, 0, tt_entries * sizeof(*tt));
 
@@ -857,7 +857,7 @@ void tt_reset(void) {
 /*}}}*/
 /*{{{  tt_put_adjusted_score*/
 
-int tt_put_adjusted_score(const int ply, const int score) {
+static int tt_put_adjusted_score(const int ply, const int score) {
 
   if (score < -MATE_LIMIT)
     return score - ply;
@@ -873,7 +873,7 @@ int tt_put_adjusted_score(const int ply, const int score) {
 /*}}}*/
 /*{{{  tt_get_adjusted_score*/
 
-int tt_get_adjusted_score(const int ply, const int score) {
+static int tt_get_adjusted_score(const int ply, const int score) {
 
   if (score < -MATE_LIMIT)
     return score + ply;
@@ -889,7 +889,7 @@ int tt_get_adjusted_score(const int ply, const int score) {
 /*}}}*/
 /*{{{  tt_put*/
 
-void tt_put(const Position *const pos, const int flags, const int depth, const int score, const move_t move) {
+static void tt_put(const Position *const pos, const int flags, const int depth, const int score, const move_t move) {
 
   const size_t idx         = pos->hash & tt_mask;
   TT *const RESTRICT entry = &tt[idx];
@@ -908,7 +908,7 @@ void tt_put(const Position *const pos, const int flags, const int depth, const i
 /*}}}*/
 /*{{{  tt_get*/
 
-TT *tt_get(const Position *const pos) {
+static TT *tt_get(const Position *const pos) {
 
   const size_t idx         = pos->hash & tt_mask;
   TT *const RESTRICT entry = &tt[idx];
@@ -930,7 +930,7 @@ TT *tt_get(const Position *const pos) {
 
 /*{{{  net_base*/
 
-int net_base(const int piece, const int sq) {
+static int net_base(const int piece, const int sq) {
 
   return (((piece << 6) | sq) * NET_H1_SIZE);
 
@@ -945,7 +945,7 @@ int net_base(const int piece, const int sq) {
 // https://github.com/jw1912/bullet/blob/main/docs/1-basics.md
 //
 
-int flip_index(const int index) {
+static int flip_index(const int index) {
 
   int piece  = index / (64 * NET_H1_SIZE);
   int square = (index / NET_H1_SIZE) % 64;
@@ -961,7 +961,7 @@ int flip_index(const int index) {
 /*}}}*/
 /*{{{  read_file*/
 
-uint8_t *read_file(const char *path, size_t *size_out) {
+static uint8_t *read_file(const char *path, size_t *size_out) {
 
     *size_out = 0;
     FILE *f = fopen(path, "rb");
@@ -1003,7 +1003,7 @@ uint8_t *read_file(const char *path, size_t *size_out) {
 /*}}}*/
 /*{{{  get_weights*/
 
-int get_weights(const char *path, int16_t **out, size_t *count_out) {
+static int get_weights(const char *path, int16_t **out, size_t *count_out) {
 
   size_t bytes = 0;
 
@@ -1032,7 +1032,7 @@ int get_weights(const char *path, int16_t **out, size_t *count_out) {
 // xxd -i -n cwtch_weights ../lozza/nets/farm1/lozza-500/quantised.bin > weights.h
 //
 
-int get_embedded_weights(int16_t **out, size_t *count_out) {
+static int get_embedded_weights(int16_t **out, size_t *count_out) {
 
   size_t bytes = (size_t)cwtch_weights_len;
 
@@ -1055,7 +1055,7 @@ int get_embedded_weights(int16_t **out, size_t *count_out) {
 
 /*}}}*/
 
-int init_weights(void) {
+static int init_weights(void) {
 
   int16_t *weights = NULL;
   size_t n = 0;
@@ -1101,7 +1101,7 @@ int init_weights(void) {
 /*}}}*/
 /*{{{  net_copy*/
 
-void net_copy(const Node *const from_node, Node *const to_node) {
+static inline void net_copy(const Node *const from_node, Node *const to_node) {
 
   memcpy(to_node->acc1, from_node->acc1, sizeof from_node->acc1);
   memcpy(to_node->acc2, from_node->acc2, sizeof from_node->acc2);
@@ -1111,7 +1111,7 @@ void net_copy(const Node *const from_node, Node *const to_node) {
 /*}}}*/
 /*{{{  net_slow_rebuild_accs*/
 
-void net_slow_rebuild_accs(Node *const node) {
+static void net_slow_rebuild_accs(Node *const node) {
 
   memcpy(node->acc1, net_h1_b, sizeof net_h1_b);
   memcpy(node->acc2, net_h1_b, sizeof net_h1_b);
@@ -1135,7 +1135,7 @@ void net_slow_rebuild_accs(Node *const node) {
 /*}}}*/
 /*{{{  net_update_accs*/
 
-void net_update_accs(Node *const node) {
+static void net_update_accs(Node *const node) {
 
   lazy.net_func(node);
 
@@ -1144,7 +1144,7 @@ void net_update_accs(Node *const node) {
 /*}}}*/
 /*{{{  net_eval*/
 
-int net_eval(Node *const node) {
+static int net_eval(Node *const node) {
 
   const int stm = node->pos.stm;
 
@@ -1175,7 +1175,7 @@ int net_eval(Node *const node) {
 
 /*{{{  net_move*/
 
-void net_move(Node *const node) {
+static void net_move(Node *const node) {
 
   const int fr_piece = lazy.arg0;
   const int fr       = lazy.arg1;
@@ -1203,7 +1203,7 @@ void net_move(Node *const node) {
 /*}}}*/
 /*{{{  net_capture*/
 
-void net_capture(Node *const node) {
+static void net_capture(Node *const node) {
 
   const int fr_piece = lazy.arg0;
   const int fr       = lazy.arg1;
@@ -1235,7 +1235,7 @@ void net_capture(Node *const node) {
 /*}}}*/
 /*{{{  net_promo_push*/
 
-void net_promo_push (Node *const node) {
+static void net_promo_push (Node *const node) {
 
   const int pawn_piece    = lazy.arg0;
   const int pawn_fr       = lazy.arg1;
@@ -1264,7 +1264,7 @@ void net_promo_push (Node *const node) {
 /*}}}*/
 /*{{{  net_promo_capture*/
 
-void net_promo_capture (Node *const node) {
+static void net_promo_capture (Node *const node) {
 
   const int pawn_piece    = lazy.arg0;
   const int pawn_fr       = lazy.arg1;
@@ -1297,7 +1297,7 @@ void net_promo_capture (Node *const node) {
 /*}}}*/
 /*{{{  net_ep_capture*/
 
-void net_ep_capture (Node *const node) {
+static void net_ep_capture (Node *const node) {
 
   const int pawn_piece     = lazy.arg0;
   const int pawn_fr        = lazy.arg1;
@@ -1331,7 +1331,7 @@ void net_ep_capture (Node *const node) {
 /*}}}*/
 /*{{{  net_castle*/
 
-void net_castle (Node *const node) {
+static void net_castle (Node *const node) {
 
   const int king_piece = lazy.arg0;
   const int king_fr_sq = lazy.arg1;
@@ -1372,7 +1372,7 @@ void net_castle (Node *const node) {
 
 /*{{{  reset_hash_history*/
 
-void reset_hash_history(const int n) {
+static inline void reset_hash_history(const int n) {
 
   hh.num_uci_moves = n;
 
@@ -1381,7 +1381,7 @@ void reset_hash_history(const int n) {
 /*}}}*/
 /*{{{  update_hash_history*/
 
-void update_hash_history(const Position *const pos, const int ply) {
+static inline void update_hash_history(const Position *const pos, const int ply) {
 
   hh.hash[min(1023, hh.num_uci_moves + ply)] = pos->hash;
 
@@ -1391,7 +1391,7 @@ void update_hash_history(const Position *const pos, const int ply) {
 
 /*{{{  reset_piece_to_history*/
 
-void reset_piece_to_history(void) {
+static inline void reset_piece_to_history(void) {
 
   memset(piece_to_history, 0, sizeof(piece_to_history));
 
@@ -1400,7 +1400,7 @@ void reset_piece_to_history(void) {
 /*}}}*/
 /*{{{  age_piece_to_history*/
 
-void age_piece_to_history() {
+static void age_piece_to_history() {
 
   for (int i=0; i < 12; i++) {
     for (int j=0; j < 64; j++) {
@@ -1413,7 +1413,7 @@ void age_piece_to_history() {
 /*}}}*/
 /*{{{  update_piece_to_history*/
 
-void update_piece_to_history(const Position *const pos, const move_t move, const int16_t bonus) {
+static inline void update_piece_to_history(const Position *const pos, const move_t move, const int16_t bonus) {
 
   const int from       = (move >> 6) & 0x3F;
   const int to         = move & 0x3F;
@@ -1427,7 +1427,7 @@ void update_piece_to_history(const Position *const pos, const move_t move, const
 
 /*{{{  update_killer*/
 
-void update_killer(Node *const node, const move_t move, const int stm) {
+static inline void update_killer(Node *const node, const move_t move, const int stm) {
 
   node->killers[stm] = move;
 
@@ -1437,7 +1437,7 @@ void update_killer(Node *const node, const move_t move, const int stm) {
 
 /*{{{  rank_noisy*/
 
-void rank_noisy(Node *const node) {
+static void rank_noisy(Node *const node) {
 
   const uint8_t *const board = node->pos.board;
   const move_t *const moves  = node->moves;
@@ -1465,7 +1465,7 @@ void rank_noisy(Node *const node) {
 /*}}}*/
 /*{{{  rank_quiet*/
 
-void rank_quiet(Node *const node) {
+static void rank_quiet(Node *const node) {
 
   const move_t killer = node->killers[node->pos.stm];
 
@@ -1500,7 +1500,7 @@ void rank_quiet(Node *const node) {
 
 /*{{{  magic_index*/
 
-int magic_index(const uint64_t blockers, const uint64_t magic, const int shift) {
+static inline int magic_index(const uint64_t blockers, const uint64_t magic, const int shift) {
 
   return (int)((blockers * magic) >> shift);
 
@@ -1509,7 +1509,7 @@ int magic_index(const uint64_t blockers, const uint64_t magic, const int shift) 
 /*}}}*/
 /*{{{  get_blockers*/
 
-void get_blockers(Attack *a, uint64_t *blockers) {
+static void get_blockers(Attack *a, uint64_t *blockers) {
 
   int bits[64];
   int num_bits = 0;
@@ -1538,7 +1538,7 @@ void get_blockers(Attack *a, uint64_t *blockers) {
 /*}}}*/
 /*{{{  find_magics*/
 
-void find_magics(Attack attacks[64], const char *label) {
+static void find_magics(Attack attacks[64], const char *label) {
 
   uint64_t tbl[MAGIC_MAX_SLOTS];
   uint32_t used[MAGIC_MAX_SLOTS];
@@ -1630,7 +1630,7 @@ void find_magics(Attack attacks[64], const char *label) {
 // These are attacks *to* the sq and used in pawn gen (ep) and is_attacked.
 //
 
-void init_pawn_attacks(void) {
+static void init_pawn_attacks(void) {
 
   for (int sq = 0; sq < 64; sq++) {
 
@@ -1648,7 +1648,7 @@ void init_pawn_attacks(void) {
 /*}}}*/
 /*{{{  init_knight_attacks*/
 
-void init_knight_attacks(void) {
+static void init_knight_attacks(void) {
 
   for (int sq = 0; sq < 64; sq++) {
 
@@ -1672,7 +1672,7 @@ void init_knight_attacks(void) {
 /*}}}*/
 /*{{{  init_bishop_attacks*/
 
-void init_bishop_attacks(void) {
+static void init_bishop_attacks(void) {
 
   int next_attack_index = 0;
 
@@ -1757,7 +1757,7 @@ void init_bishop_attacks(void) {
 /*}}}*/
 /*{{{  init_rook_attacks*/
 
-void init_rook_attacks(void) {
+static void init_rook_attacks(void) {
 
   int next_attack_index = 5248;
 
@@ -1846,7 +1846,7 @@ void init_rook_attacks(void) {
 /*}}}*/
 /*{{{  init_king_attacks*/
 
-void init_king_attacks(void) {
+static void init_king_attacks(void) {
 
   for (int sq = 0; sq < 64; sq++) {
 
@@ -1874,7 +1874,7 @@ void init_king_attacks(void) {
 
 /*{{{  init_rights_masks*/
 
-void init_rights_masks(void) {
+static void init_rights_masks(void) {
 
   for (int sq = 0; sq < 64; ++sq)
     rights_masks[sq] = ALL_RIGHTS;
@@ -1892,7 +1892,7 @@ void init_rights_masks(void) {
 /*}}}*/
 /*{{{  is_attacked*/
 
-int is_attacked(const Position *const pos, const int sq, const int opp) {
+static int is_attacked(const Position *const pos, const int sq, const int opp) {
 
   const int base = colour_index(opp);
 
@@ -1930,7 +1930,7 @@ int is_attacked(const Position *const pos, const int sq, const int opp) {
 
 /*{{{  gen_pawns_white_quiet*/
 
-void gen_pawns_white_quiet(Node *const node) {
+static void gen_pawns_white_quiet(Node *const node) {
 
   const Position *const pos = &node->pos;
   const uint64_t pawns      = pos->all[WPAWN];
@@ -1980,7 +1980,7 @@ void gen_pawns_white_quiet(Node *const node) {
 /*}}}*/
 /*{{{  gen_pawns_white_noisy*/
 
-void gen_pawns_white_noisy(Node *const node) {
+static void gen_pawns_white_noisy(Node *const node) {
 
   const Position *const pos = &node->pos;
   const uint64_t pawns      = pos->all[WPAWN];
@@ -2057,7 +2057,7 @@ void gen_pawns_white_noisy(Node *const node) {
 
 /*{{{  gen_pawns_black_quiet*/
 
-void gen_pawns_black_quiet(Node *const node) {
+static void gen_pawns_black_quiet(Node *const node) {
 
   const Position *const pos = &node->pos;
   const uint64_t pawns      = pos->all[BPAWN];
@@ -2107,7 +2107,7 @@ void gen_pawns_black_quiet(Node *const node) {
 /*}}}*/
 /*{{{  gen_pawns_black_noisy*/
 
-void gen_pawns_black_noisy(Node *const node) {
+static void gen_pawns_black_noisy(Node *const node) {
 
   const Position *const pos = &node->pos;
   const uint64_t pawns      = pos->all[BPAWN];
@@ -2182,14 +2182,14 @@ void gen_pawns_black_noisy(Node *const node) {
 
 /*}}}*/
 
-void gen_pawns_quiet(Node *const node) {
+static inline void gen_pawns_quiet(Node *const node) {
   if (node->pos.stm == WHITE)
     gen_pawns_white_quiet(node);
   else
     gen_pawns_black_quiet(node);
 }
 
-void gen_pawns_noisy(Node *const node) {
+static inline void gen_pawns_noisy(Node *const node) {
   if (node->pos.stm == WHITE)
     gen_pawns_white_noisy(node);
   else
@@ -2199,7 +2199,7 @@ void gen_pawns_noisy(Node *const node) {
 /*}}}*/
 /*{{{  gen_jumpers*/
 
-void gen_jumpers(Node *const node, const uint64_t *const attack_table, const int piece, const uint64_t targets, const int flag) {
+static void gen_jumpers(Node *const node, const uint64_t *const attack_table, const int piece, const uint64_t targets, const int flag) {
 
   const Position *const pos = &node->pos;
   const int stm             = pos->stm;
@@ -2226,7 +2226,7 @@ void gen_jumpers(Node *const node, const uint64_t *const attack_table, const int
 /*}}}*/
 /*{{{  gen_sliders*/
 
-void gen_sliders(Node *const node, const Attack *const RESTRICT attack_table, const int piece, const uint64_t targets, const int flag) {
+static void gen_sliders(Node *const node, const Attack *const RESTRICT attack_table, const int piece, const uint64_t targets, const int flag) {
 
   const Position *const pos = &node->pos;
   const int stm             = pos->stm;
@@ -2257,7 +2257,7 @@ void gen_sliders(Node *const node, const Attack *const RESTRICT attack_table, co
 /*}}}*/
 /*{{{  gen_castling*/
 
-void gen_castling(Node *const node) {
+static void gen_castling(Node *const node) {
 
   const Position *const pos = &node->pos;
   const int stm             = pos->stm;
@@ -2311,7 +2311,7 @@ void gen_castling(Node *const node) {
 
 /*{{{  gen_noisy*/
 
-void gen_noisy(Node *const node) {
+static void gen_noisy(Node *const node) {
 
   const Position *const pos    = &node->pos;
   const int stm                = pos->stm;
@@ -2333,7 +2333,7 @@ void gen_noisy(Node *const node) {
 /*}}}*/
 /*{{{  gen_quiet*/
 
-void gen_quiet(Node *const node) {
+static void gen_quiet(Node *const node) {
 
   const Position *const pos    = &node->pos;
   const int stm                = pos->stm;
@@ -2362,7 +2362,7 @@ void gen_quiet(Node *const node) {
 
 /*{{{  remove_tt_move*/
 
-void remove_tt_move(Node *const node) {
+static void remove_tt_move(Node *const node) {
 
   move_t *src = node->moves;
   move_t *dst = node->moves;
@@ -2382,7 +2382,7 @@ void remove_tt_move(Node *const node) {
 /*}}}*/
 /*{{{  get_next_sorted_move*/
 
-move_t get_next_sorted_move(Node *const node) {
+static move_t get_next_sorted_move(Node *const node) {
 
   move_t max_m         = 0;
   move_t *const moves  = node->moves;
@@ -2415,7 +2415,7 @@ move_t get_next_sorted_move(Node *const node) {
 
 /*{{{  init_next_search_move*/
 
-void init_next_search_move(Node *const node, const uint8_t in_check, const move_t tt_move) {
+static void init_next_search_move(Node *const node, const uint8_t in_check, const move_t tt_move) {
 
   node->stage    = 0;
   node->in_check = in_check;
@@ -2426,7 +2426,7 @@ void init_next_search_move(Node *const node, const uint8_t in_check, const move_
 /*}}}*/
 /*{{{  get_next_search_move*/
 
-move_t get_next_search_move(Node *const node) {
+static move_t get_next_search_move(Node *const node) {
 
   switch (node->stage) {
 
@@ -2514,7 +2514,7 @@ move_t get_next_search_move(Node *const node) {
 
 /*{{{  init_next_qsearch_move*/
 
-void init_next_qsearch_move(Node *const node, const move_t tt_move) {
+static void init_next_qsearch_move(Node *const node, const move_t tt_move) {
 
   node->stage    = 0;
   node->in_check = 0;  //unused
@@ -2525,7 +2525,7 @@ void init_next_qsearch_move(Node *const node, const move_t tt_move) {
 /*}}}*/
 /*{{{  get_next_qsearch_move*/
 
-move_t get_next_qsearch_move(Node *const node) {
+static move_t get_next_qsearch_move(Node *const node) {
 
   switch (node->stage) {
 
@@ -2588,7 +2588,7 @@ move_t get_next_qsearch_move(Node *const node) {
 
 /*{{{  init_next_perft_move*/
 
-void init_next_perft_move(Node *const node, const int in_check) {
+static void init_next_perft_move(Node *const node, const int in_check) {
 
   node->num_moves = 0;
   node->next_move = 0;
@@ -2613,7 +2613,7 @@ void init_next_perft_move(Node *const node, const int in_check) {
 
 /*{{{  post_move*/
 
-void post_move(Position *const pos) {
+static void post_move(Position *const pos) {
 
   int rights    = pos->rights;
   int ep        = pos->ep;
@@ -2650,7 +2650,7 @@ void post_move(Position *const pos) {
 /*}}}*/
 /*{{{  pre_move*/
 
-void pre_move(Position *const pos, const move_t move) {
+static void pre_move(Position *const pos, const move_t move) {
 
   const int stm        = pos->stm;
   const int from       = (move >> 6) & 0x3F;
@@ -2674,7 +2674,7 @@ void pre_move(Position *const pos, const move_t move) {
 
 /*{{{  post_capture*/
 
-void post_capture(Position *const pos) {
+static void post_capture(Position *const pos) {
 
   int rights    = pos->rights;
   int ep        = pos->ep;
@@ -2712,7 +2712,7 @@ void post_capture(Position *const pos) {
 /*}}}*/
 /*{{{  pre_capture*/
 
-void pre_capture(Position *const pos, const move_t move) {
+static void pre_capture(Position *const pos, const move_t move) {
 
   uint64_t *const RESTRICT colour = pos->colour;
   uint64_t *const RESTRICT all    = pos->all;
@@ -2747,7 +2747,7 @@ void pre_capture(Position *const pos, const move_t move) {
 
 /*{{{  post_push*/
 
-void post_push(Position *const pos) {
+static void post_push(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -2778,7 +2778,7 @@ void post_push(Position *const pos) {
 /*}}}*/
 /*{{{  pre_push*/
 
-void pre_push(Position *const pos, const move_t move) {
+static void pre_push(Position *const pos, const move_t move) {
 
   const int stm        = pos->stm;
   const int from       = (move >> 6) & 0x3F;
@@ -2802,7 +2802,7 @@ void pre_push(Position *const pos, const move_t move) {
 
 /*{{{  post_ep_capture*/
 
-void post_ep_capture(Position *const pos) {
+static void post_ep_capture(Position *const pos) {
 
   uint8_t *const RESTRICT board = pos->board;
 
@@ -2838,7 +2838,7 @@ void post_ep_capture(Position *const pos) {
 /*}}}*/
 /*{{{  pre_ep_capture*/
 
-void pre_ep_capture(Position *const pos, const move_t move) {
+static void pre_ep_capture(Position *const pos, const move_t move) {
 
   uint64_t *const RESTRICT all    = pos->all;
   uint64_t *const RESTRICT colour = pos->colour;
@@ -2875,7 +2875,7 @@ void pre_ep_capture(Position *const pos, const move_t move) {
 
 /*{{{  post_castle*/
 
-void post_castle(Position *const pos) {
+static void post_castle(Position *const pos) {
 
   uint8_t *const board = pos->board;
 
@@ -2920,7 +2920,7 @@ void post_castle(Position *const pos) {
 /*}}}*/
 /*{{{  pre_castle*/
 
-void pre_castle(Position *const pos, const move_t move) {
+static void pre_castle(Position *const pos, const move_t move) {
 
   uint64_t *const all    = pos->all;
   uint64_t *const colour = pos->colour;
@@ -2959,7 +2959,7 @@ void pre_castle(Position *const pos, const move_t move) {
 
 /*{{{  post_promo_push*/
 
-void post_promo_push(Position *const pos) {
+static void post_promo_push(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -2990,7 +2990,7 @@ void post_promo_push(Position *const pos) {
 /*}}}*/
 /*{{{  pre_promo_push*/
 
-void pre_promo_push(Position *const pos, const move_t move) {
+static void pre_promo_push(Position *const pos, const move_t move) {
 
   uint64_t *const all    = pos->all;
   uint64_t *const colour = pos->colour;
@@ -3023,7 +3023,7 @@ void pre_promo_push(Position *const pos, const move_t move) {
 
 /*{{{  post_promo_capture*/
 
-void post_promo_capture(Position *const pos) {
+static void post_promo_capture(Position *const pos) {
 
   int rights    = pos->rights;
   int ep        = pos->ep;
@@ -3061,7 +3061,7 @@ void post_promo_capture(Position *const pos) {
 /*}}}*/
 /*{{{  pre_promo_capture*/
 
-void pre_promo_capture(Position *const pos, const move_t move) {
+static void pre_promo_capture(Position *const pos, const move_t move) {
 
   uint64_t *const RESTRICT all    = pos->all;
   uint64_t *const RESTRICT colour = pos->colour;
@@ -3096,7 +3096,7 @@ void pre_promo_capture(Position *const pos, const move_t move) {
 
 /*{{{  init_move_funcs*/
 
-void init_move_funcs(void) {
+static void init_move_funcs(void) {
 
   move_funcs[0]  = pre_move;
   move_funcs[1]  = pre_move;
@@ -3120,7 +3120,7 @@ void init_move_funcs(void) {
 /*}}}*/
 /*{{{  make_move_pre*/
 
-void make_move_pre(Position *const pos, const move_t move) {
+static inline void make_move_pre(Position *const pos, const move_t move) {
 
   const int mt = (move >> 12) & 0xF;
 
@@ -3155,7 +3155,7 @@ void make_move_pre(Position *const pos, const move_t move) {
 // Call the _post func set up by the _pre_func.
 //
 
-void make_move_post(Position *const pos) {
+static inline void make_move_post(Position *const pos) {
 
   lazy.post_func(pos);
 
@@ -3166,7 +3166,7 @@ void make_move_post(Position *const pos) {
 
 /*{{{  make_null_move*/
 
-void make_null_move(Position *const pos) {
+static void make_null_move(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -3191,7 +3191,7 @@ void make_null_move(Position *const pos) {
 
 /*{{{  debug_slow_board_check*/
 
-int debug_slow_board_check(Node *const n1) {
+static int debug_slow_board_check(Node *const n1) {
 
   Node n;
   Node *n2 = &n;
@@ -3311,7 +3311,7 @@ int debug_slow_board_check(Node *const n1) {
 
 /*{{{  ucinewgame*/
 
-void ucinewgame(void) {
+static void ucinewgame(void) {
 
   memset(ss, 0, sizeof(ss));
 
@@ -3325,7 +3325,7 @@ void ucinewgame(void) {
 /*}}}*/
 /*{{{  init_zob*/
 
-void init_zob(void) {
+static void init_zob(void) {
 
   for (int i=0; i < 12*64; i++)
     zob_pieces[i] = rand64();
@@ -3346,7 +3346,7 @@ void init_zob(void) {
 /*}}}*/
 /*{{{  mat_draw*/
 
-int mat_draw(const Position *const pos) {
+static int mat_draw(const Position *const pos) {
 
   const uint64_t *const a = pos->all;
   const int num_pieces    = popcount(pos->occupied);
@@ -3364,7 +3364,7 @@ int mat_draw(const Position *const pos) {
 /*}}}*/
 /*{{{  eval*/
 
-int eval(Node *const node) {
+static inline int eval(Node *const node) {
 
   if (mat_draw(&node->pos))
     return 0;
@@ -3376,7 +3376,7 @@ int eval(Node *const node) {
 /*}}}*/
 /*{{{  play_move*/
 
-void play_move(Node *const node, char *uci_move) {
+static void play_move(Node *const node, char *uci_move) {
 
   char buf[6];
 
@@ -3407,7 +3407,7 @@ void play_move(Node *const node, char *uci_move) {
 /*}}}*/
 /*{{{  position*/
 
-void position(Node *const node, const char *board_fen, const char *stm_str, const char *rights_str, const char *ep_str, int num_uci_moves, char **uci_moves) {
+static void position(Node *const node, const char *board_fen, const char *stm_str, const char *rights_str, const char *ep_str, int num_uci_moves, char **uci_moves) {
 
   Position *const pos = &node->pos;
 
@@ -3522,7 +3522,7 @@ void position(Node *const node, const char *board_fen, const char *stm_str, cons
 /*}}}*/
 /*{{{  et*/
 
-void et (void) {
+static void et (void) {
 
   const int num_fens = 50;
 
@@ -3539,7 +3539,7 @@ void et (void) {
 /*}}}*/
 /*{{{  probably_legal*/
 
-move_t probably_legal(const Position *const pos, move_t move) {
+static move_t probably_legal(const Position *const pos, move_t move) {
 
   if (!move) {
     return 0;
@@ -3570,7 +3570,7 @@ move_t probably_legal(const Position *const pos, move_t move) {
 /*}}}*/
 /*{{{  is_draw*/
 
-int is_draw(const Position *const pos, const int ply) {
+static int is_draw(const Position *const pos, const int ply) {
 
   const int hmc = pos->hmc;
 
@@ -3626,7 +3626,7 @@ int is_draw(const Position *const pos, const int ply) {
 /*}}}*/
 /*{{{  pos_copy*/
 
-void pos_copy(const Position *const from_pos, Position *const to_pos) {
+static inline void pos_copy(const Position *const from_pos, Position *const to_pos) {
 
   *to_pos = *from_pos;
 
@@ -3637,7 +3637,7 @@ void pos_copy(const Position *const from_pos, Position *const to_pos) {
 
 /*{{{  get_least_valuable_piece*/
 
-uint64_t get_least_valuable_piece(const Position *const pos, const uint64_t attadef, const int by_side, int *piece) {
+static uint64_t get_least_valuable_piece(const Position *const pos, const uint64_t attadef, const int by_side, int *piece) {
 
   const int base = by_side ? 6 : 0;
 
@@ -3659,7 +3659,7 @@ uint64_t get_least_valuable_piece(const Position *const pos, const uint64_t atta
 /*}}}*/
 /*{{{  rook_attackers_to*/
 
-uint64_t rook_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
+static uint64_t rook_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
 
   const Attack *const RESTRICT a = &rook_attacks[to_sq];
   uint64_t rays                  = a->attacks[magic_index(occ & a->mask, a->magic, a->shift)];
@@ -3671,7 +3671,7 @@ uint64_t rook_attackers_to(const Position *const pos, const uint64_t occ, const 
 /*}}}*/
 /*{{{  bishop_attackers_to*/
 
-uint64_t bishop_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
+static uint64_t bishop_attackers_to(const Position *const pos, const uint64_t occ, const int to_sq) {
 
   const Attack *const RESTRICT a = &bishop_attacks[to_sq];
   uint64_t rays                  = a->attacks[magic_index(occ & a->mask, a->magic, a->shift)];
@@ -3683,7 +3683,7 @@ uint64_t bishop_attackers_to(const Position *const pos, const uint64_t occ, cons
 /*}}}*/
 /*{{{  static_attackers_to*/
 
-uint64_t static_attackers_to(const Position *const pos, const int to_sq) {
+static uint64_t static_attackers_to(const Position *const pos, const int to_sq) {
 
   uint64_t attackers = 0ULL;
 
@@ -3707,7 +3707,7 @@ uint64_t static_attackers_to(const Position *const pos, const int to_sq) {
 /*}}}*/
 /*{{{  see_ge*/
 
-int see_ge(const Position *const pos, const move_t move, int threshold) {
+static int see_ge(const Position *const pos, const move_t move, int threshold) {
 
   if (!lut(lut_see, move))
     return 1;
@@ -3774,7 +3774,7 @@ int see_ge(const Position *const pos, const move_t move, int threshold) {
 /*}}}*/
 /*{{{  is_pawn_endgame*/
 
-int is_pawn_endgame(const Position *const pos) {
+static inline int is_pawn_endgame(const Position *const pos) {
 
   const uint64_t *const a = pos->all;
 
@@ -3789,7 +3789,7 @@ int is_pawn_endgame(const Position *const pos) {
 
 /*{{{  collect_pv*/
 
-void collect_pv(Node *const this_node, const Node *const next_node, const move_t move) {
+static inline void collect_pv(Node *const this_node, const Node *const next_node, const move_t move) {
 
   memcpy(this_node->pv, next_node->pv, (size_t)next_node->pv_len * sizeof(move_t));
 
@@ -3801,7 +3801,7 @@ void collect_pv(Node *const this_node, const Node *const next_node, const move_t
 /*}}}*/
 /*{{{  qsearch*/
 
-int qsearch(const int ply, int alpha, const int beta) {
+static int qsearch(const int ply, int alpha, const int beta) {
 
   assert(ply < MAX_PLY);
 
@@ -3915,7 +3915,7 @@ int qsearch(const int ply, int alpha, const int beta) {
 /*}}}*/
 /*{{{  search*/
 
-int search(const int ply, int depth, int alpha, const int beta) {
+static int search(const int ply, int depth, int alpha, const int beta) {
 
   assert(ply < MAX_PLY);
 
@@ -4244,7 +4244,7 @@ int search(const int ply, int depth, int alpha, const int beta) {
 // This is Clockwork shaped with different magic numbers.
 //
 
-void go(void) {
+static void go(void) {
 
   char bm_str[6];
   char pv_str[MAX_PLY * 6 + 1];
@@ -4332,7 +4332,7 @@ void go(void) {
 /*}}}*/
 /*{{{  bench*/
 
-void bench (void) {
+static void bench (void) {
 
   ucinewgame();
 
@@ -4369,17 +4369,17 @@ void bench (void) {
 /*}}}*/
 /*{{{  threads*/
 
-pthread_t search_thread;
-_Atomic int search_running = 0;
+static pthread_t search_thread;
+static _Atomic int search_running = 0;
 
-void *go_thread_fn(void *arg) {
+static void *go_thread_fn(void *arg) {
   (void)arg;
   go();
   atomic_store(&search_running, 0);
   return NULL;
 }
 
-void join_search_if_running(void) {
+static void join_search_if_running(void) {
   if (atomic_load(&search_running)) {
     atomic_store(&tc.finished, 1);
     pthread_join(search_thread, NULL);
@@ -4392,7 +4392,7 @@ void join_search_if_running(void) {
 
 /*{{{  perft*/
 
-uint64_t perft(const int ply, const int depth) {
+static uint64_t perft(const int ply, const int depth) {
 
   if (depth == 0)
     return 1;
@@ -4456,7 +4456,7 @@ uint64_t perft(const int ply, const int depth) {
 /*}}}*/
 /*{{{  perft_tests*/
 
-void perft_tests (void) {
+static void perft_tests (void) {
 
   const int num_tests  = 65;
   uint64_t start_ms    = now_ms();
@@ -4500,7 +4500,7 @@ void perft_tests (void) {
 /*}}}*/
 /*{{{  init_once*/
 
-int init_once(void) {
+static int init_once(void) {
 
   assert(INT16_MIN < -MAX_HISTORY);
 
@@ -4554,9 +4554,7 @@ int init_once(void) {
 
 /*{{{  uci_tokens*/
 
-int uci_exec(char *line_in);
-
-int uci_tokens(int num_tokens, char **tokens) {
+static int uci_tokens(int num_tokens, char **tokens) {
 
   if (num_tokens == 0)
     return 0;
@@ -4840,7 +4838,7 @@ int uci_tokens(int num_tokens, char **tokens) {
 /*}}}*/
 /*{{{  uci_exec*/
 
-int uci_exec(char *line) {
+static int uci_exec(char *line) {
 
   char *tokens[UCI_TOKENS];
   char *token;
@@ -4863,7 +4861,7 @@ int uci_exec(char *line) {
 /*}}}*/
 /*{{{  uci_loop*/
 
-void uci_loop(int argc, char **argv) {
+static void uci_loop(int argc, char **argv) {
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
