@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "31"
+#define BUILD "32"
 
 /*{{{  includes*/
 
@@ -1894,30 +1894,30 @@ static void init_rights_masks(void) {
 
 static int is_attacked(const Position *const pos, const int sq, const int opp) {
 
-  const int base = colour_index(opp);
+  const uint64_t *const RESTRICT all = pos->all;
+  const int base                     = colour_index(opp);
 
-  const uint64_t opp_pawns   = pos->all[base+PAWN];
-  const uint64_t opp_kings   = pos->all[base+KING];
-  const uint64_t opp_knights = pos->all[base+KNIGHT];
-  const uint64_t opp_bq      = pos->all[base+BISHOP] | pos->all[base+QUEEN];
-  const uint64_t opp_rq      = pos->all[base+ROOK]   | pos->all[base+QUEEN];
+  if (all[base+KNIGHT] & knight_attacks[sq])    return 1;
+  if (all[base+PAWN]   & pawn_attacks[opp][sq]) return 1;
+  if (all[base+KING]   & king_attacks[sq])      return 1;
 
-  if (opp_knights & knight_attacks[sq])    return 1;
-  if (opp_pawns   & pawn_attacks[opp][sq]) return 1;
-  if (opp_kings   & king_attacks[sq])      return 1;
+  const uint64_t occ   = pos->occupied;
+  const uint64_t all_q = all[base+QUEEN];
 
   {
-    const Attack *const RESTRICT a = &bishop_attacks[sq];
-    const uint64_t blockers        = pos->occupied & a->mask;
+    const uint64_t opp             = all[base+ROOK] | all_q;
+    const Attack *const RESTRICT a = &rook_attacks[sq];
+    const uint64_t blockers        = occ & a->mask;
     const uint64_t attacks         = a->attacks[magic_index(blockers, a->magic, a->shift)];
-    if (attacks & opp_bq) return 1;
+    if (attacks & opp) return 1;
   }
 
   {
-    const Attack *const RESTRICT a = &rook_attacks[sq];
-    const uint64_t blockers        = pos->occupied & a->mask;
+    const uint64_t opp             = all[base+BISHOP] | all_q;
+    const Attack *const RESTRICT a = &bishop_attacks[sq];
+    const uint64_t blockers        = occ & a->mask;
     const uint64_t attacks         = a->attacks[magic_index(blockers, a->magic, a->shift)];
-    if (attacks & opp_rq) return 1;
+    if (attacks & opp) return 1;
   }
 
   return 0;
@@ -2582,22 +2582,6 @@ static move_t get_next_qsearch_move(Node *const node) {
       return 0;
 
   }
-}
-
-/*}}}*/
-
-/*{{{  init_next_perft_move*/
-
-static void init_next_perft_move(Node *const node, const int in_check) {
-
-  node->num_moves = 0;
-  node->next_move = 0;
-  node->in_check  = in_check;
-  node->tt_move   = 0; // unused
-
-  gen_noisy(node);
-  gen_quiet(node);
-
 }
 
 /*}}}*/
@@ -4397,28 +4381,22 @@ static uint64_t perft(const int ply, const int depth) {
   if (depth == 0)
     return 1;
 
-  Node *const this_node = &ss[ply];
-  Node *const next_node = &ss[ply+1];
-
-  const Position *const this_pos = &this_node->pos;
-  Position *const next_pos       = &next_node->pos;
-
-  const int stm          = this_pos->stm;
-  const int opp          = stm ^ 1;
-  const int stm_king_idx = piece_index(KING, stm);
-  const int stm_king_sq  = bsf(this_pos->all[stm_king_idx]);
-  const int in_check     = is_attacked(this_pos, stm_king_sq, opp);
-
-  uint64_t tot_nodes = 0;
-  move_t move;
-
-  init_next_perft_move(this_node, in_check);
-
+  Node *const this_node                   = &ss[ply];
+  Node *const next_node                   = &ss[ply+1];
+  const Position *const this_pos          = &this_node->pos;
+  Position *const next_pos                = &next_node->pos;
+  const int stm                           = this_pos->stm;
+  const int opp                           = stm ^ 1;
+  const int stm_king_idx                  = piece_index(KING, stm);
+  const int stm_king_sq                   = bsf(this_pos->all[stm_king_idx]);
+  const int in_check                      = is_attacked(this_pos, stm_king_sq, opp);
   const uint64_t *const next_stm_king_ptr = &next_pos->all[stm_king_idx];
+  uint64_t tot_nodes                      = 0;
+  move_t move                             = 0;
 
-  for (int i=0; i < this_node->num_moves; i++) {
+  init_next_search_move(this_node, in_check, 0);
 
-    move = this_node->moves[i];
+  while ((move = get_next_search_move(this_node))) {
 
     /*{{{  copy make*/
     
@@ -4429,23 +4407,9 @@ static uint64_t perft(const int ply, const int depth) {
       continue;
     
     /*}}}*/
-    /*{{{  accumulate*/
-    
-    if (depth > 1) {
-    
-      lazy.post_func(next_pos);
-    
-      tot_nodes += perft(ply+1, depth-1);
-    
-    }
-    
-    else {
-    
-      tot_nodes ++;
-    
-    }
-    
-    /*}}}*/
+
+    lazy.post_func(next_pos);
+    tot_nodes += perft(ply+1, depth-1);
 
   }
 
