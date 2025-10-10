@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "32"
+#define BUILD "33"
 
 /*{{{  includes*/
 
@@ -124,7 +124,8 @@ enum {
   A8, B8, C8, D8, E8, F8, G8, H8
 };
 
-#define MAX_HISTORY 32766
+#define MAX_HISTORY 16384
+#define MAX_HISTORY_SHIFT 14
 
 #define TT_EXACT 1
 #define TT_ALPHA 2
@@ -172,7 +173,8 @@ typedef struct {
   int num_moves;  // ditto
   int next_move;  // ditto
   move_t tt_move;
-  move_t killers[2];
+  move_t killer1;
+  move_t killer2;
   int16_t ev;
   uint8_t in_check;
   uint8_t stage;
@@ -1389,6 +1391,19 @@ static inline void update_hash_history(const Position *const pos, const int ply)
 
 /*}}}*/
 
+/*{{{  reset_killers*/
+
+static inline void reset_killers(void) {
+
+  for (int i=0; i < MAX_PLY; i++) {
+    ss[i].killer1 = 0;
+    ss[i].killer2 = 0;
+  }
+
+}
+
+/*}}}*/
+
 /*{{{  reset_piece_to_history*/
 
 static inline void reset_piece_to_history(void) {
@@ -1419,7 +1434,11 @@ static inline void update_piece_to_history(const Position *const pos, const move
   const int to         = move & 0x3F;
   const int from_piece = pos->board[from];
 
-  piece_to_history[from_piece][to] += bonus - piece_to_history[from_piece][to] * abs(bonus) / MAX_HISTORY;
+  piece_to_history[from_piece][to] += bonus - ((piece_to_history[from_piece][to] * abs(bonus)) >> MAX_HISTORY_SHIFT);
+
+  if (abs(piece_to_history[from_piece][to]) >= MAX_HISTORY) {
+    age_piece_to_history();
+  }
 
 }
 
@@ -1427,9 +1446,13 @@ static inline void update_piece_to_history(const Position *const pos, const move
 
 /*{{{  update_killer*/
 
-static inline void update_killer(Node *const node, const move_t move, const int stm) {
+static inline void update_killer(Node *const node, const move_t move) {
 
-  node->killers[stm] = move;
+  if (move == node->tt_move || move == node->killer1)
+    return;
+
+  node->killer2 = node->killer1;
+  node->killer1 = move;
 
 }
 
@@ -1467,8 +1490,8 @@ static void rank_noisy(Node *const node) {
 
 static void rank_quiet(Node *const node) {
 
-  const move_t killer = node->killers[node->pos.stm];
-
+  const move_t killer1       = node->killer1;
+  const move_t killer2       = node->killer2;
   const uint8_t *const board = node->pos.board;
   const move_t *const moves  = node->moves;
   int16_t *const ranks       = node->ranks;
@@ -1478,10 +1501,12 @@ static void rank_quiet(Node *const node) {
 
     const move_t move = moves[i];
 
-    if (move == killer) {
+    if (move == killer1) {
+      ranks[i] = MAX_HISTORY + 2;
+    }
+    else if (move == killer2) {
       ranks[i] = MAX_HISTORY + 1;
     }
-
     else {
       const int from       = (move >> 6) & 0x3F;
       const int to         = move & 0x3F;
@@ -3500,6 +3525,7 @@ static void position(Node *const node, const char *board_fen, const char *stm_st
   /*}}}*/
 
   reset_piece_to_history();
+  reset_killers();
 
 }
 
@@ -4181,7 +4207,7 @@ static int search(const int ply, int depth, int alpha, const int beta) {
       
       if (move != tt_move && lut(lut_killer, move)) {
       
-        update_killer(this_node, move, stm);
+        update_killer(this_node, move);
       
       }
       
@@ -4466,7 +4492,7 @@ static void perft_tests (void) {
 
 static int init_once(void) {
 
-  assert(INT16_MIN < -MAX_HISTORY);
+  assert(INT16_MIN < -(MAX_HISTORY + 10));
 
   memset(ss, 0, sizeof(ss));
 
