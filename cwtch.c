@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "33"
+#define BUILD "34"
 
 /*{{{  includes*/
 
@@ -2754,9 +2754,9 @@ static void pre_capture(Position *const pos, const move_t move) {
 
 /*}}}*/
 
-/*{{{  post_push*/
+/*{{{  post_ep_push*/
 
-static void post_push(Position *const pos) {
+static void post_ep_push(Position *const pos) {
 
   int ep        = pos->ep;
   uint64_t hash = pos->hash;
@@ -2785,9 +2785,9 @@ static void post_push(Position *const pos) {
 }
 
 /*}}}*/
-/*{{{  pre_push*/
+/*{{{  pre_ep_push*/
 
-static void pre_push(Position *const pos, const move_t move) {
+static void pre_ep_push(Position *const pos, const move_t move) {
 
   const int stm        = pos->stm;
   const int from       = (move >> 6) & 0x3F;
@@ -2799,7 +2799,7 @@ static void pre_push(Position *const pos, const move_t move) {
   pos->colour[stm]     ^= mask;
   pos->occupied        ^= mask;
 
-  lazy.post_func = post_push;
+  lazy.post_func = post_ep_push;
   lazy.net_func  = net_move;
   lazy.arg0      = from_piece;
   lazy.arg1      = from;
@@ -3110,7 +3110,7 @@ static void init_move_funcs(void) {
   move_funcs[0]  = pre_move;
   move_funcs[1]  = pre_move;
   move_funcs[2]  = pre_castle;
-  move_funcs[3]  = pre_push;
+  move_funcs[3]  = pre_ep_push;
   move_funcs[4]  = pre_promo_push;
   move_funcs[5]  = pre_promo_push;
   move_funcs[6]  = pre_promo_push;
