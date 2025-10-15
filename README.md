@@ -3,7 +3,7 @@ A C version of my Javascript chess engine [Lozza](https://github.com/op12no2/loz
 
 Like Lozza, the code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
-Cwtch means hug/cuddle in Welsh and is pronounced cutch with a very short u like in put - ish.
+Cwtch means hug/cuddle in Welsh and is pronounced cutch.
 
 ## Command Extensions
 
