@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "34"
+#define BUILD "35"
 
 /*{{{  includes*/
 
@@ -30,8 +30,8 @@
 #define max(a,b) (( (a) > (b) ) ? (a) : (b))
 #define min(a,b) (( (a) < (b) ) ? (a) : (b))
 
-#define IS_ALIGNED(p, a)  ((((uintptr_t)(p)) & ((a) - 1)) == 0)
-#define ASSERT_ALIGNED64(p)  assert(IS_ALIGNED((p), 64))
+#define IS_ALIGNED(p, a) ((((uintptr_t)(p)) & ((a) - 1)) == 0)
+#define ASSERT_ALIGNED64(p) assert(IS_ALIGNED((p), 64))
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
   #include <stdalign.h>
@@ -169,17 +169,15 @@ typedef struct {
   ALIGN64 int16_t ranks[MAX_MOVES];
   ALIGN64 move_t pv[MAX_PLY];
 
-  int pv_len;     // hack this can be smaller
-  int num_moves;  // ditto
-  int next_move;  // ditto
+  uint8_t pv_len;
+  uint8_t num_moves;
+  uint8_t next_move;
   move_t tt_move;
   move_t killer1;
   move_t killer2;
   int16_t ev;
   uint8_t in_check;
   uint8_t stage;
-
-  uint8_t _pad[42];
 
 } Node;
 
@@ -321,6 +319,8 @@ static const uint8_t lut_see[16]     = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0
 static const uint8_t lut_prune[16]   = {1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static const uint8_t lut_history[16] = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
 static const uint8_t lut_killer[16]  = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t lut_quiet[16]   = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t lut_noisy[16]   = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
 
 static ALIGN64 uint64_t zob_pieces[12 * 64];
 static ALIGN64 uint64_t zob_stm;
@@ -339,6 +339,13 @@ static const int rook_to[64]    = {[G1] = F1, [C1] = D1, [G8] = F8, [C8] = D8};
 static const int rook_from[64]  = {[G1] = H1, [C1] = A1, [G8] = H8, [C8] = A8};
 
 static int rights_masks[64];
+
+static ALIGN64 int16_t piece_to_history[12][64];
+
+static ALIGN64 uint64_t rank_mask[64];
+static ALIGN64 uint64_t file_mask[64];
+static ALIGN64 uint64_t diag_mask[64];
+static ALIGN64 uint64_t anti_mask[64];
 
 /*{{{  perft data*/
 
@@ -471,13 +478,6 @@ static const Bench bench_data[] = {
 };
 
 /*}}}*/
-
-static ALIGN64 int16_t piece_to_history[12][64];
-
-static ALIGN64 uint64_t rank_mask[64];
-static ALIGN64 uint64_t file_mask[64];
-static ALIGN64 uint64_t diag_mask[64];
-static ALIGN64 uint64_t anti_mask[64];
 
 /*}}}*/
 
@@ -628,7 +628,7 @@ static void print_board(Node *const node) {
       uint64_t bb = 1ULL << sq;
       char c = '.';
 
-      for (int i = 0; i < 12; i++) {
+      for (int i=0; i < 12; i++) {
         if (pos->all[i] & bb) {
           c = piece_chars[i];
           break;
@@ -734,14 +734,14 @@ static inline uint8_t lut(const uint8_t *const this_lut, const move_t move) {
 
 static void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t max_nodes, int64_t move_time, int max_depth, int moves_to_go) {
 
-  if (wtime < 0) wtime = 0;
-  if (winc < 0) winc = 0;
-  if (btime < 0) btime = 0;
-  if (binc < 0) binc = 0;
-  if (max_nodes < 0) max_nodes = 0;
-  if (move_time < 0) move_time = 0;
+  if (wtime < 0)       wtime       = 0;
+  if (winc < 0)        winc        = 0;
+  if (btime < 0)       btime       = 0;
+  if (binc < 0)        binc        = 0;
+  if (max_nodes < 0)   max_nodes   = 0;
+  if (move_time < 0)   move_time   = 0;
   if (moves_to_go < 0) moves_to_go = 0;
-  if (max_depth < 0) max_depth = 0;
+  if (max_depth < 0)   max_depth   = 0;
 
   tc = (TimeControl){0};
 
@@ -769,7 +769,7 @@ static void tc_init(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, in
       move_time = 1;
   }
 
-  tc.start_time  = now_ms();
+  tc.start_time = now_ms();
 
   if (move_time) {
     tc.finish_time = tc.start_time + move_time;
@@ -1539,17 +1539,17 @@ static void get_blockers(Attack *a, uint64_t *blockers) {
   int bits[64];
   int num_bits = 0;
 
-  for (int b = 0; b < 64; b++) {
+  for (int b=0; b < 64; b++) {
     if (a->mask & (1ULL << b)) {
       bits[num_bits++] = b;
     }
   }
 
-  for (int i = 0; i < a->count; i++) {
+  for (int i=0; i < a->count; i++) {
 
     uint64_t blocker = 0;
 
-    for (int j = 0; j < a->bits; j++) {
+    for (int j=0; j < a->bits; j++) {
       if (i & (1 << j)) {
         blocker |= 1ULL << bits[j];
       }
@@ -1569,15 +1569,13 @@ static void find_magics(Attack attacks[64], const char *label) {
   uint32_t used[MAGIC_MAX_SLOTS];
 
   static uint32_t stamp = 1;
+  const int verbose     = 0;
+  int total_tries       = 0;
+  int total_slots       = 0;
 
-  const int verbose = 0;
+  for (int sq=0; sq < 64; ++sq) {
 
-  int total_tries = 0;
-  int total_slots = 0;
-
-  for (int sq = 0; sq < 64; ++sq) {
-
-    Attack *a = &attacks[sq];
+    Attack *a   = &attacks[sq];
     const int N = a->count;
 
     uint64_t blockers[MAGIC_MAX_SLOTS];
@@ -1603,9 +1601,9 @@ static void find_magics(Attack attacks[64], const char *label) {
 
       int fail = 0;
 
-      for (int i = 0; i < N; ++i) {
+      for (int i=0; i < N; ++i) {
 
-        const int idx = magic_index(blockers[i], magic, a->shift);
+        const int idx      = magic_index(blockers[i], magic, a->shift);
         const uint64_t att = a->attacks[i];
 
         if (used[idx] != stamp) {
@@ -1622,8 +1620,8 @@ static void find_magics(Attack attacks[64], const char *label) {
 
         a->magic = magic;
 
-        for (int i = 0; i < N; ++i) {
-          const int idx = magic_index(blockers[i], magic, a->shift);
+        for (int i=0; i < N; ++i) {
+          const int idx   = magic_index(blockers[i], magic, a->shift);
           a->attacks[idx] = tbl[idx];
         }
 
@@ -1657,15 +1655,12 @@ static void find_magics(Attack attacks[64], const char *label) {
 
 static void init_pawn_attacks(void) {
 
-  for (int sq = 0; sq < 64; sq++) {
+  for (int sq=0; sq < 64; sq++) {
 
     const uint64_t bb = 1ULL << sq;
 
-    pawn_attacks[WHITE][sq] =
-      ((bb >> 7) & NOT_A_FILE) | ((bb >> 9) & NOT_H_FILE);
-
-    pawn_attacks[BLACK][sq] =
-      ((bb << 7) & NOT_H_FILE) | ((bb << 9) & NOT_A_FILE);
+    pawn_attacks[WHITE][sq] = ((bb >> 7) & NOT_A_FILE) | ((bb >> 9) & NOT_H_FILE);
+    pawn_attacks[BLACK][sq] = ((bb << 7) & NOT_H_FILE) | ((bb << 9) & NOT_A_FILE);
 
   }
 }
@@ -1675,7 +1670,7 @@ static void init_pawn_attacks(void) {
 
 static void init_knight_attacks(void) {
 
-  for (int sq = 0; sq < 64; sq++) {
+  for (int sq=0; sq < 64; sq++) {
 
     int r = sq / 8, f = sq % 8;
     uint64_t bb = 0;
@@ -1683,7 +1678,7 @@ static void init_knight_attacks(void) {
     int dr[8] = {-2, -1, 1, 2, 2, 1, -1, -2};
     int df[8] = {1, 2, 2, 1, -1, -2, -2, -1};
 
-    for (int i = 0; i < 8; i++) {
+    for (int i=0; i < 8; i++) {
       int nr = r + dr[i], nf = f + df[i];
       if (nr >= 0 && nr < 8 && nf >= 0 && nf < 8)
         bb |= 1ULL << (nr * 8 + nf);
@@ -1735,34 +1730,34 @@ static void init_bishop_attacks(void) {
 
     get_blockers(a, blockers);
 
-    for (int i = 0; i < a->count; i++) {
+    for (int i=0; i < a->count; i++) {
       /*{{{  build attacks[next_attack_index]*/
       
       uint64_t blocker = blockers[i];
       uint64_t attack  = 0;
       
-      for (int r = rank + 1, f = file + 1; r <= 7 && f <= 7; r++, f++) {
+      for (int r=rank+1, f=file+1; r <= 7 && f <= 7; r++, f++) {
         int s = r * 8 + f;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s))
           break;
       }
       
-      for (int r = rank + 1, f = file - 1; r <= 7 && f >= 0; r++, f--) {
+      for (int r=rank+1, f=file-1; r <= 7 && f >= 0; r++, f--) {
         int s = r * 8 + f;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s))
           break;
       }
       
-      for (int r = rank - 1, f = file + 1; r >= 0 && f <= 7; r--, f++) {
+      for (int r=rank-1, f=file+1; r >= 0 && f <= 7; r--, f++) {
         int s = r * 8 + f;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s))
           break;
       }
       
-      for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
+      for (int r=rank-1, f=file-1; r >= 0 && f >= 0; r--, f--) {
         int s = r * 8 + f;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s))
@@ -1799,16 +1794,16 @@ static void init_rook_attacks(void) {
     
     a->mask = 0;
     
-    for (int f = file + 1; f <= 6; f++)
+    for (int f=file+1; f <= 6; f++)
       a->mask |= 1ULL << (rank * 8 + f);
     
-    for (int f = file - 1; f >= 1; f--)
+    for (int f=file-1; f >= 1; f--)
       a->mask |= 1ULL << (rank * 8 + f);
     
-    for (int r = rank + 1; r <= 6; r++)
+    for (int r=rank+1; r <= 6; r++)
       a->mask |= 1ULL << (r * 8 + file);
     
-    for (int r = rank - 1; r >= 1; r--)
+    for (int r=rank-1; r >= 1; r--)
       a->mask |= 1ULL << (r * 8 + file);
     
     /*}}}*/
@@ -1820,13 +1815,13 @@ static void init_rook_attacks(void) {
 
     get_blockers(a, blockers);
 
-    for (int i = 0; i < a->count; i++) {
+    for (int i=0; i < a->count; i++) {
       /*{{{  build attacks[next_attack_index]*/
       
       uint64_t blocker = blockers[i];
       uint64_t attack  = 0;
       
-      for (int r = rank + 1; r <= 7; r++) {
+      for (int r=rank+1; r <= 7; r++) {
         int s = r * 8 + file;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s)) {
@@ -1834,7 +1829,7 @@ static void init_rook_attacks(void) {
         }
       }
       
-      for (int r = rank - 1; r >= 0; r--) {
+      for (int r=rank-1; r >= 0; r--) {
         int s = r * 8 + file;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s)) {
@@ -1842,7 +1837,7 @@ static void init_rook_attacks(void) {
         }
       }
       
-      for (int f = file + 1; f <= 7; f++) {
+      for (int f=file+1; f <= 7; f++) {
         int s = rank * 8 + f;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s)) {
@@ -1850,7 +1845,7 @@ static void init_rook_attacks(void) {
         }
       }
       
-      for (int f = file - 1; f >= 0; f--) {
+      for (int f=file-1; f >= 0; f--) {
         int s = rank * 8 + f;
         attack |= 1ULL << s;
         if (blocker & (1ULL << s)) {
@@ -1873,13 +1868,13 @@ static void init_rook_attacks(void) {
 
 static void init_king_attacks(void) {
 
-  for (int sq = 0; sq < 64; sq++) {
+  for (int sq=0; sq < 64; sq++) {
 
-    int r = sq / 8, f = sq % 8;
+    int r       = sq / 8, f = sq % 8;
     uint64_t bb = 0;
 
-    for (int dr = -1; dr <= 1; dr++) {
-      for (int df = -1; df <= 1; df++) {
+    for (int dr=-1; dr <= 1; dr++) {
+      for (int df=-1; df <= 1; df++) {
         if (dr == 0 && df == 0) continue;
         int nr = r + dr, nf = f + df;
         if (nr >= 0 && nr < 8 && nf >= 0 && nf < 8)
@@ -1901,7 +1896,7 @@ static void init_king_attacks(void) {
 
 static void init_rights_masks(void) {
 
-  for (int sq = 0; sq < 64; ++sq)
+  for (int sq=0; sq < 64; ++sq)
     rights_masks[sq] = ALL_RIGHTS;
 
   rights_masks[A1] &= ~WHITE_RIGHTS_QUEEN;
@@ -2389,17 +2384,17 @@ static void gen_quiet(Node *const node) {
 
 static void remove_tt_move(Node *const node) {
 
-  move_t *src = node->moves;
-  move_t *dst = node->moves;
+  const int n                  = node->num_moves;
+  move_t *const RESTRICT moves = node->moves;
+  move_t tt_move               = node->tt_move;
 
-  int n = node->num_moves;
+  for (int i=0; i < n; i++) {
 
-  for (int i=0; i < n; i++, src++) {
-
-    if (*src == node->tt_move)
+    if (moves[i] == tt_move) {
+      moves[i] = moves[n-1];
       node->num_moves--;
-    else
-      *dst++ = *src;
+      break;
+    }
 
   }
 }
@@ -2479,7 +2474,7 @@ static move_t get_next_search_move(Node *const node) {
       
       gen_noisy(node);
       
-      if (node->tt_move)
+      if (node->tt_move && lut(lut_noisy, node->tt_move))
         remove_tt_move(node);
       
       rank_noisy(node);
@@ -2504,7 +2499,7 @@ static move_t get_next_search_move(Node *const node) {
       
       gen_quiet(node);
       
-      if (node->tt_move)
+      if (node->tt_move && lut(lut_quiet, node->tt_move))
         remove_tt_move(node);
       
       rank_quiet(node);
@@ -3265,7 +3260,7 @@ static int debug_slow_board_check(Node *const n1) {
   
   uint8_t board[64];
   
-  for (int sq = 0; sq < 64; sq++)
+  for (int sq=0; sq < 64; sq++)
     board[sq] = EMPTY;
   
   for (int p=0; p < 12; p++) {
@@ -3277,7 +3272,7 @@ static int debug_slow_board_check(Node *const n1) {
     }
   }
   
-  for (int sq = 0; sq < 64; sq++) {
+  for (int sq=0; sq < 64; sq++) {
     if (board[sq] != pos->board[sq]) {
       fprintf(stderr, "verify_from_bitboards: mismatch at square %d (expected %d got %d)\n",
                       sq, pos->board[sq], board[sq]);
@@ -3654,7 +3649,7 @@ static uint64_t get_least_valuable_piece(const Position *const pos, const uint64
   if ((attadef & pos->colour[by_side]) == 0)
     return 0;
 
-  for (int i = base; i < base + 6; i++) {
+  for (int i=base; i < base + 6; i++) {
     uint64_t subset = attadef & pos->all[i];
     if (subset) {
       *piece = i;
