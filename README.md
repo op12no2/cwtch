@@ -5,6 +5,8 @@ Like Lozza, the code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
 Cwtch means hug/cuddle in Welsh and is pronounced cutch.
 
+Cwtch was essentially an experiment and I will not be developing it any further. If you would like to inherit it as a start to your own engine please let me know.
+
 ## Command Extensions
 
 ```
