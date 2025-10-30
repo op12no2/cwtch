@@ -1,11 +1,10 @@
 # Cwtch
-A C version of my Javascript chess engine [Lozza](https://github.com/op12no2/lozza).
 
-Like Lozza, the code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
+A UCI chess engine written in C, currently using the same network as [Lozza](https://github.com/op12no2/lozza).
+
+The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
 Cwtch means hug/cuddle in Welsh and is pronounced cutch.
-
-Cwtch was essentially an experiment and I will not be developing it any further. If you would like to inherit it as a start to your own engine (it's fairly basic) please do let me know.
 
 ## Command Extensions
 
