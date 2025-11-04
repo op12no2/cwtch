@@ -1,6 +1,6 @@
 # Cwtch
 
-A UCI chess engine written in C, currently using the same network as [Lozza](https://github.com/op12no2/lozza).
+A UCI chess engine written in C.
 
 The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
