@@ -1156,7 +1156,7 @@ static int net_eval(Node *const node) {
   const int32_t *const RESTRICT w1 = &net_o_w[0];
   const int32_t *const RESTRICT w2 = &net_o_w[NET_H1_SIZE];
 
-  int acc = 0;
+  int32_t acc = 0;
 
   for (int i=0; i < NET_H1_SIZE; i++) {  // autovec eval
     acc += w1[i] * sqrelu(a1[i]) + w2[i] * sqrelu(a2[i]);
@@ -1167,9 +1167,7 @@ static int net_eval(Node *const node) {
   acc *= NET_SCALE;
   acc /= NET_QAB;
 
-  assert(abs(acc) < INT16_MAX && "eval overflow");
-
-  return acc;
+  return (int)acc;
 
 }
 
@@ -4099,9 +4097,6 @@ static int search(const int ply, int depth, int alpha, const int beta) {
     net_copy(this_node, next_node);
     net_update_accs(next_node);
     update_hash_history(next_pos, ply+1);
-    
-    if (!tc.bm)
-      tc.bm = move;
     
     /*}}}*/
 
