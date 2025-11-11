@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "35"
+#define BUILD "37"
 
 /*{{{  includes*/
 
@@ -125,7 +125,6 @@ enum {
 };
 
 #define MAX_HISTORY 16384
-#define MAX_HISTORY_SHIFT 14
 
 #define TT_EXACT 1
 #define TT_ALPHA 2
@@ -1432,7 +1431,7 @@ static inline void update_piece_to_history(const Position *const pos, const move
   const int to         = move & 0x3F;
   const int from_piece = pos->board[from];
 
-  piece_to_history[from_piece][to] += bonus - ((piece_to_history[from_piece][to] * abs(bonus)) >> MAX_HISTORY_SHIFT);
+  piece_to_history[from_piece][to] += bonus - piece_to_history[from_piece][to] * abs(bonus) / MAX_HISTORY;
 
   if (abs(piece_to_history[from_piece][to]) >= MAX_HISTORY) {
     age_piece_to_history();
