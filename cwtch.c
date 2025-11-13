@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "38"
+#define BUILD "39"
 
 /*{{{  includes*/
 
@@ -299,6 +299,8 @@ static ALIGN64 uint64_t raw_attacks[107648];
 static ALIGN64 uint64_t pawn_attacks[2][64];
 static ALIGN64 uint64_t knight_attacks[64];
 static ALIGN64 uint64_t king_attacks[64];
+static ALIGN64 uint64_t all_attacks[64];
+static ALIGN64 uint64_t all_attacks_inc_edge[64];
 
 static ALIGN64 Attack bishop_attacks[64];
 static ALIGN64 Attack rook_attacks[64];
@@ -418,6 +420,8 @@ static const Perft perft_data[] = {
 
 };
 
+static const size_t perft_data_len = sizeof(perft_data) / sizeof(perft_data[0]);
+
 /*}}}*/
 /*{{{  bench data*/
 
@@ -475,6 +479,8 @@ static const Bench bench_data[] = {
   {"2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R", "w", "-", "-"}
 
 };
+
+static const size_t bench_data_len = sizeof(bench_data) / sizeof(bench_data[0]);
 
 /*}}}*/
 
@@ -1885,6 +1891,51 @@ static void init_king_attacks(void) {
 }
 
 /*}}}*/
+/*{{{  init_all_attacks*/
+
+static void init_all_attacks(void) {
+
+  for (int sq=0; sq < 64; sq++) {
+
+    int r       = sq / 8;
+    int f       = sq % 8;
+    uint64_t bb = 0;
+
+    const int bdr[4] = { 1,  1, -1, -1};
+    const int bdf[4] = { 1, -1,  1, -1};
+
+    for (int dir = 0; dir < 4; dir++) {
+      int nr = r + bdr[dir];
+      int nf = f + bdf[dir];
+      while (nr >= 0 && nr < 8 && nf >= 0 && nf < 8) {
+        bb |= 1ULL << (nr * 8 + nf);
+        nr += bdr[dir];
+        nf += bdf[dir];
+      }
+    }
+
+    const int rdr[4] = { 1, -1,  0,  0};
+    const int rdf[4] = { 0,  0,  1, -1};
+
+    for (int dir = 0; dir < 4; dir++) {
+      int nr = r + rdr[dir];
+      int nf = f + rdf[dir];
+      while (nr >= 0 && nr < 8 && nf >= 0 && nf < 8) {
+        bb |= 1ULL << (nr * 8 + nf);
+        nr += rdr[dir];
+        nf += rdf[dir];
+      }
+    }
+
+    bb |= knight_attacks[sq];
+
+    all_attacks_inc_edge[sq] = bb;
+    all_attacks[sq]          = knight_attacks[sq] | bishop_attacks[sq].mask | rook_attacks[sq].mask;
+
+  }
+}
+
+/*}}}*/
 
 /*}}}*/
 /*{{{  move generation*/
@@ -2336,13 +2387,19 @@ static void gen_noisy(Node *const node) {
   const uint64_t opp_king_bb   = pos->all[piece_index(KING, opp)];
   const uint64_t opp_king_near = king_attacks[bsf(opp_king_bb)];
   const uint64_t enemies       = pos->colour[opp] & ~opp_king_bb;
+  uint64_t targets             = enemies;
+
+  if (node->in_check) {
+    const int our_king_sq = bsf(pos->all[piece_index(KING, stm)]);
+    targets               &= all_attacks_inc_edge[our_king_sq];
+  }
 
   gen_pawns_noisy(node);
-  gen_jumpers(node, knight_attacks, KNIGHT, enemies,                  MT_CAPTURE);
-  gen_sliders(node, bishop_attacks, BISHOP, enemies,                  MT_CAPTURE);
-  gen_sliders(node, rook_attacks,   ROOK,   enemies,                  MT_CAPTURE);
-  gen_sliders(node, bishop_attacks, QUEEN,  enemies,                  MT_CAPTURE);
-  gen_sliders(node, rook_attacks,   QUEEN,  enemies,                  MT_CAPTURE);
+  gen_jumpers(node, knight_attacks, KNIGHT, targets,                  MT_CAPTURE);
+  gen_sliders(node, bishop_attacks, BISHOP, targets,                  MT_CAPTURE);
+  gen_sliders(node, rook_attacks,   ROOK,   targets,                  MT_CAPTURE);
+  gen_sliders(node, bishop_attacks, QUEEN,  targets,                  MT_CAPTURE);
+  gen_sliders(node, rook_attacks,   QUEEN,  targets,                  MT_CAPTURE);
   gen_jumpers(node, king_attacks,   KING,   enemies & ~opp_king_near, MT_CAPTURE);
 
 }
@@ -2358,13 +2415,19 @@ static void gen_quiet(Node *const node) {
   const uint64_t occ           = pos->occupied;
   const uint64_t opp_king_bb   = pos->all[piece_index(KING, opp)];
   const uint64_t opp_king_near = king_attacks[bsf(opp_king_bb)];
+  uint64_t targets             = ~occ;
+
+  if (node->in_check) {
+    const int our_king_sq = bsf(pos->all[piece_index(KING, stm)]);
+    targets               &= all_attacks[our_king_sq];
+  }
 
   gen_pawns_quiet(node);
-  gen_jumpers(node, knight_attacks, KNIGHT, ~occ,                  MT_NON_PAWN_PUSH);
-  gen_sliders(node, bishop_attacks, BISHOP, ~occ,                  MT_NON_PAWN_PUSH);
-  gen_sliders(node, rook_attacks,   ROOK,   ~occ,                  MT_NON_PAWN_PUSH);
-  gen_sliders(node, bishop_attacks, QUEEN,  ~occ,                  MT_NON_PAWN_PUSH);
-  gen_sliders(node, rook_attacks,   QUEEN,  ~occ,                  MT_NON_PAWN_PUSH);
+  gen_jumpers(node, knight_attacks, KNIGHT, targets,               MT_NON_PAWN_PUSH);
+  gen_sliders(node, bishop_attacks, BISHOP, targets,               MT_NON_PAWN_PUSH);
+  gen_sliders(node, rook_attacks,   ROOK,   targets,               MT_NON_PAWN_PUSH);
+  gen_sliders(node, bishop_attacks, QUEEN,  targets,               MT_NON_PAWN_PUSH);
+  gen_sliders(node, rook_attacks,   QUEEN,  targets,               MT_NON_PAWN_PUSH);
   gen_jumpers(node, king_attacks,   KING,   ~occ & ~opp_king_near, MT_NON_PAWN_PUSH);
 
   if (node->pos.rights && !node->in_check)
@@ -3940,7 +4003,7 @@ static int search(const int ply, int depth, int alpha, const int beta) {
   const int stm_king_idx = piece_index(KING, stm);
   const int in_check     = is_attacked(this_pos, bsf(this_pos->all[stm_king_idx]), opp);
   const int is_root      = ply == 0;
-  const int is_pv        = beta - alpha != 1;
+  const int is_pv        = is_root || (beta - alpha != 1);
 
   /*{{{  horizon*/
   
@@ -4065,7 +4128,7 @@ static int search(const int ply, int depth, int alpha, const int beta) {
   int score                               = alpha;
   int best_score                          = alpha;
   int num_legal_moves                     = 0;
-  int num_prunable                        = 0;
+  int num_prunable_moves                  = 0;
   const uint64_t *const next_stm_king_ptr = &next_pos->all[stm_king_idx];
 
   init_next_search_move(this_node, in_check, tt_move);
@@ -4076,15 +4139,19 @@ static int search(const int ply, int depth, int alpha, const int beta) {
 
     /*{{{  prune*/
     
-    if (!is_pv && !in_check && alpha > -MATE_LIMIT && prunable) {
+    if (prunable && !is_pv && !in_check && alpha > -MATE_LIMIT) {
     
-      if (depth <= 2 && num_prunable > 5 * depth) {
+      if (depth <= 2 && num_prunable_moves > 5 * depth) {
         continue;
       }
     
       if (num_legal_moves > depth && (ev + depth * depth * 50 + 100) < alpha) {
         continue;
       }
+    
+      //if (num_legal_moves > 0 && depth <= 4 && (ev + depth * 120) < alpha) {
+        //continue;
+      //}
     
     }
     
@@ -4106,7 +4173,7 @@ static int search(const int ply, int depth, int alpha, const int beta) {
 
     num_legal_moves++;
     if (prunable)
-      num_prunable++;
+      num_prunable_moves++;
 
     /*{{{  search*/
     
@@ -4342,7 +4409,7 @@ static void bench (void) {
 
   ucinewgame();
 
-  const int num_fens   = 50;
+  const int num_fens   = bench_data_len;
   uint64_t start_ms    = now_ms();
   uint64_t total_nodes = 0;
 
@@ -4444,7 +4511,7 @@ static uint64_t perft(const int ply, const int depth) {
 
 static void perft_tests (void) {
 
-  const int num_tests  = 65;
+  const int num_tests  = perft_data_len;
   uint64_t start_ms    = now_ms();
   uint64_t total_nodes = 0;
   int errors           = 0;
@@ -4507,6 +4574,8 @@ static int init_once(void) {
 
   init_rook_attacks();
   init_king_attacks();
+
+  init_all_attacks();
 
 #ifndef NDEBUG
   uint64_t elapsed_ms = now_ms() - start_ms;
