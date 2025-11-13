@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "37"
+#define BUILD "38"
 
 /*{{{  includes*/
 
@@ -4065,20 +4065,25 @@ static int search(const int ply, int depth, int alpha, const int beta) {
   int score                               = alpha;
   int best_score                          = alpha;
   int num_legal_moves                     = 0;
+  int num_prunable                        = 0;
   const uint64_t *const next_stm_king_ptr = &next_pos->all[stm_king_idx];
 
   init_next_search_move(this_node, in_check, tt_move);
 
   while ((move = get_next_search_move(this_node))) {
 
+    const int prunable = lut(lut_prune, move);
+
     /*{{{  prune*/
     
-    if (!is_pv && !in_check && alpha > -MATE_LIMIT && lut(lut_prune, move)) {
+    if (!is_pv && !in_check && alpha > -MATE_LIMIT && prunable) {
+    
+      if (depth <= 2 && num_prunable > 5 * depth) {
+        continue;
+      }
     
       if (num_legal_moves > depth && (ev + depth * depth * 50 + 100) < alpha) {
-    
         continue;
-    
       }
     
     }
@@ -4100,6 +4105,8 @@ static int search(const int ply, int depth, int alpha, const int beta) {
     /*}}}*/
 
     num_legal_moves++;
+    if (prunable)
+      num_prunable++;
 
     /*{{{  search*/
     
