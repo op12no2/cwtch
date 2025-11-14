@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "41"
+#define BUILD "42"
 
 /*{{{  includes*/
 
@@ -4006,6 +4006,8 @@ static int search(const int ply, int depth, int alpha, const int beta) {
   const int is_root      = ply == 0;
   const int is_pv        = is_root || (beta - alpha != 1);
 
+  this_node->in_check = in_check;
+
   /*{{{  horizon*/
   
   if (depth <= 0 && in_check == 0) {
@@ -4073,9 +4075,27 @@ static int search(const int ply, int depth, int alpha, const int beta) {
   const int orig_alpha           = alpha;
   const int ev                   = eval(this_node);
   this_node->ev                  = ev;
-  const int improving            = ply < 2 ? 0 : (ev > ss[ply-1].ev && ev > ss[ply-2].ev);
   int r                          = 0;
   int e                          = 0;
+
+  /*{{{  improving*/
+  
+  int improving = 0;
+  
+  if (in_check) {
+    improving = 0;
+  }
+  else if (ply >= 2 && !ss[ply-2].in_check) {
+    improving = ev > ss[ply-2].ev;
+  }
+  else if (ply >= 2 && !ss[ply-4].in_check) {
+    improving = ev > ss[ply-4].ev;
+  }
+  //else {
+    //improving = true;
+  //}
+  
+  /*}}}*/
 
   /*{{{  beta prune*/
   
