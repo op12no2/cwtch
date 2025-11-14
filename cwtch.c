@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "40"
+#define BUILD "41"
 
 /*{{{  includes*/
 
@@ -3965,6 +3965,7 @@ static int qsearch(const int ply, int alpha, const int beta) {
     const int score = -qsearch(ply+1, -beta, -alpha);
 
     if (score >= beta) {
+      tt_put(this_pos, TT_BETA, 0, tt_put_adjusted_score(ply, score), move);
       return score;
     }
 
