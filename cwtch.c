@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "39"
+#define BUILD "40"
 
 /*{{{  includes*/
 
@@ -4145,13 +4145,9 @@ static int search(const int ply, int depth, int alpha, const int beta) {
         continue;
       }
     
-      if (num_legal_moves > depth && (ev + depth * depth * 50 + 100) < alpha) {
+      if (num_legal_moves > 0 && depth <= 4 && (ev + depth * 120) < alpha) {
         continue;
       }
-    
-      //if (num_legal_moves > 0 && depth <= 4 && (ev + depth * 120) < alpha) {
-        //continue;
-      //}
     
     }
     
