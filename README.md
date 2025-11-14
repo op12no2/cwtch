@@ -1,6 +1,6 @@
 # Cwtch
 
-A UCI chess engine written in C. Cwtch is a command line program that needs a chess uer interface to operate within; for example [cutechess](https://cutechess.com/).
+A UCI chess engine written in C. Cwtch is a command line program that needs a chess user interface to operate within; for example [cutechess](https://cutechess.com/).
 
 The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
