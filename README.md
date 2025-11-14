@@ -6,7 +6,7 @@ The code is folded using ```/*{{{  fold name*/``` and ```/*}}}*/```.
 
 Cwtch means hug/cuddle in Welsh and is pronounced cutch.
 
-## Command Extensions
+## Command extensions
 
 ```
 bench - display a cumulative node count for a collection of searches.
@@ -28,6 +28,12 @@ et - perform a series of eval tests.
 build - display the build number.
 
 net - display the network size.
+```
+
+## UCI options
+
+```
+option name Hash type spin default 16 min 1 max 1024
 ```
 
 ## Acknowledgements
