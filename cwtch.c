@@ -1,6 +1,6 @@
 
 #define VERSION "4"
-#define BUILD "42"
+#define BUILD "43"
 
 /*{{{  includes*/
 
@@ -4077,25 +4077,7 @@ static int search(const int ply, int depth, int alpha, const int beta) {
   this_node->ev                  = ev;
   int r                          = 0;
   int e                          = 0;
-
-  /*{{{  improving*/
-  
-  int improving = 0;
-  
-  if (in_check) {
-    improving = 0;
-  }
-  else if (ply >= 2 && !ss[ply-2].in_check) {
-    improving = ev > ss[ply-2].ev;
-  }
-  else if (ply >= 2 && !ss[ply-4].in_check) {
-    improving = ev > ss[ply-4].ev;
-  }
-  //else {
-    //improving = true;
-  //}
-  
-  /*}}}*/
+  const int improving            = (ply >= 2 && !ss[ply-2].in_check) ? ev > ss[ply-2].ev : 0;
 
   /*{{{  beta prune*/
   
