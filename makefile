@@ -1,69 +1,57 @@
-# Compiler & basic config
+
+# Configurable paths
+SRC_DIR := src
+BUILD_DIR := build
+BIN_DIR := .
+
+# Output binary
+TARGET := $(BIN_DIR)/cwtch
+
+# Compiler settings
 CC := clang
-BUILD ?= release
-ARCH ?= native
+CFLAGS := -Wall -Wextra -O3 -flto -march=native -MMD -MP
+LDFLAGS := -flto -lm
 
-EXTRA_CFLAGS ?=
-EXTRA_LDFLAGS ?=
+# Debug settings (for valgrind/gdb)
+DEBUG_CFLAGS := -Wall -Wextra -O1 -g -MMD -MP
+DEBUG_LDFLAGS := -lm
 
-# Detect platform
-UNAME_S := $(shell uname -s)
-# MSYS2/MinGW environments report MINGW*/MSYS*/CYGWIN*; Windows shells often have OS=Windows_NT
-IS_WINDOWS := $(filter Windows_NT,$(OS))
-IS_MINGW   := $(findstring MINGW,$(UNAME_S))
-IS_MSYS    := $(findstring MSYS,$(UNAME_S))
-IS_CYGWIN  := $(findstring CYGWIN,$(UNAME_S))
+# Find all .c files in source directory
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+DEPS := $(OBJS:.o=.d)
 
-# If any of these are non-empty, treat as Windows target (MSYS2/MinGW/Cygwin)
-ifneq ($(or $(IS_WINDOWS),$(IS_MINGW),$(IS_MSYS),$(IS_CYGWIN)),)
-  PLATFORM := windows
-else
-  PLATFORM := linux
-endif
+# Default target
+all: $(TARGET)
 
-# Executable name
-ifeq ($(PLATFORM),windows)
-  EXEEXT := .exe
-else
-  EXEEXT :=
-endif
+# Link
+$(TARGET): $(OBJS) | $(BIN_DIR)
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
-BIN := cwtch$(EXEEXT)
-SRC := cwtch.c
+# Compile
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Base flags
-ifeq ($(BUILD),release)
-  CFLAGS  := -O3 -march=$(ARCH) -flto -DNDEBUG -pthread $(EXTRA_CFLAGS)
-  LDFLAGS := -flto -fuse-ld=lld $(EXTRA_LDFLAGS)
-else
-  ifeq ($(BUILD),dev)
-    CFLAGS  := -O3 -march=native -flto -pthread $(EXTRA_CFLAGS)   # keep asserts
-    LDFLAGS := -flto -fuse-ld=lld $(EXTRA_LDFLAGS)
-  else
-    ifeq ($(BUILD),debug)
-      CFLAGS  := -Og -g3 -Wall -Wextra -fno-omit-frame-pointer -pthread $(EXTRA_CFLAGS)
-      LDFLAGS := $(EXTRA_LDFLAGS)
-    else
-      $(error BUILD must be 'release', 'dev', or 'debug')
-    endif
-  endif
-endif
+# Create directories
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# Windows-only: link winpthread statically; keep everything else dynamic
-ifeq ($(PLATFORM),windows)
-  LDFLAGS += -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic
-endif
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
-.PHONY: all clean diag
-all: $(BIN)
-
-$(BIN): $(SRC)
-	$(CC) $(CFLAGS) $(SRC) -o $@ $(LDFLAGS)
-
+# Clean
 clean:
-	rm -f $(BIN)
+	rm -rf $(BUILD_DIR) $(TARGET)
 
-# Optional: build with vectorization diagnostics
-diag: CFLAGS += -Rpass=loop-vectorize 
-diag: all
+# Rebuild
+rebuild: clean all
 
+# Debug build (for valgrind/gdb)
+debug: clean
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(DEBUG_CFLAGS) $(SRCS) -o $(TARGET) $(DEBUG_LDFLAGS)
+
+.PHONY: all clean rebuild debug
+
+# Include generated dependency files
+-include $(DEPS)

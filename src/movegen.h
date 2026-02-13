@@ -1,0 +1,15 @@
+#ifndef MOVEGEN_H
+#define MOVEGEN_H
+
+#define RANK_1 0x00000000000000FFULL
+#define RANK_2 0x000000000000FF00ULL
+#define RANK_3 0x0000000000FF0000ULL
+#define RANK_6 0x0000FF0000000000ULL
+#define RANK_7 0x00FF000000000000ULL
+#define RANK_8 0xFF00000000000000ULL
+#define RANK_PROMO (RANK_1 | RANK_8)
+
+void gen_quiets(Node *node);
+void gen_captures(Node *node);
+
+#endif
