@@ -4,7 +4,13 @@
 #include <stdint.h>
 #include <time.h>
 
+#ifndef ENGINE_NAME
+#define ENGINE_NAME "Cwtch"
+#endif
+
+#ifndef VERSION
 #define VERSION "5_use_tt_in_qs"
+#endif
 
 #define NET_H1_SIZE 384
 #define NET_I_SIZE 768
