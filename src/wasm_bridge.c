@@ -24,11 +24,11 @@ void wasm_init(void) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void wasm_exec(const char *input) {
+int wasm_exec(const char *input) {
   char buf[WASM_BRIDGE_BUFFER_SIZE];
   strncpy(buf, input, sizeof(buf) - 1);
   buf[sizeof(buf) - 1] = '\0';
-  uci_exec(buf);
+  return uci_exec(buf);
 }
 
 #endif

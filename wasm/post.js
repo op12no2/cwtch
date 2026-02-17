@@ -17,6 +17,11 @@ if (!_isNode) {
     if (typeof cmd !== 'string')
       return;
 
+    if (!_ready) {
+      _queue.push(cmd);
+      return;
+    }
+
     // Marshal the JS string into WASM linear memory
     var len = Module.lengthBytesUTF8(cmd) + 1;
     var ptr = Module._malloc(len);
