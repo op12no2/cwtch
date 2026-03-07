@@ -1,8 +1,3 @@
 #!/bin/bash
 
-pgn=sprt.pgn
-
-grep stalled $pgn
-grep illegal $pgn
-grep forfeit $pgn
-grep abandoned $pgn
+grep "ermination" sprt.pgn | sort -u
