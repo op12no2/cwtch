@@ -9,7 +9,7 @@ TARGET := $(BIN_DIR)/cwtch
 
 # Compiler settings
 CC := clang
-BASE_CFLAGS := -Wall -Wextra -O3 -flto -march=native
+BASE_CFLAGS := -Wall -Wextra -O3 -flto -march=x86-64-v3
 CFLAGS := $(BASE_CFLAGS) -MMD -MP
 LDFLAGS := -flto -lm -lpthread
 
@@ -17,7 +17,7 @@ LDFLAGS := -flto -lm -lpthread
 WIN_CC := clang --target=x86_64-w64-mingw32 -fuse-ld=lld
 WIN_TARGET := $(BIN_DIR)/cwtch.exe
 WIN_BUILD_DIR := build-win
-WIN_BASE_CFLAGS := -Wall -Wextra -O3 -flto -march=native
+WIN_BASE_CFLAGS := -Wall -Wextra -O3 -flto -march=x86-64-v3
 WIN_CFLAGS := $(WIN_BASE_CFLAGS) -MMD -MP
 WIN_LDFLAGS := -flto
 

@@ -204,6 +204,8 @@ int search(const int ply, int depth, int alpha, int beta) {
       if (depth >= 3 && played >= 2 && is_quiet && !in_check) {
         const int lmr_m = played >= MAX_PLY ? MAX_PLY - 1 : played;
         d -= lmr[depth][lmr_m] + 1;
+        if (hist > 0)
+          d++;
         if (d < 1) d = 1;
       }
 
