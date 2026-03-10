@@ -94,10 +94,10 @@ void bench (int depth) {
   uint64_t elapsed_ms = end_ms - start_ms;
   uint64_t nps = (total_nodes * 1000ULL) / (elapsed_ms ? elapsed_ms : 1);
 
-  printf("%s time %llu nodes %llu nps %llu\n", BUILD, 
-       (unsigned long long)elapsed_ms,
-       (unsigned long long)total_nodes,
-       (unsigned long long)nps);
+  printf("nodes %llu elapsed %llu nps %llu\n", 
+    (unsigned long long)total_nodes,
+    (unsigned long long)elapsed_ms,
+    (unsigned long long)nps);
 
 }
 

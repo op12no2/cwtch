@@ -102,14 +102,14 @@ int qsearch(const int ply, int alpha, const int beta) {
       if (score > alpha) {
         alpha = score;
         if (score >= beta) {
-          tt_put(pos, TT_BETA, 0, put_adjusted_score(ply, best_score), best_move); // never mate score
+          tt_put(pos, TT_BETA, 0, put_adjusted_score(ply, best_score), best_move); 
           return score;
         }
       }
     }
   }
 
-  tt_put(pos, (alpha > orig_alpha) ? TT_EXACT : TT_ALPHA, 0, put_adjusted_score(ply, best_score), best_move); // never mate score
+  tt_put(pos, (alpha > orig_alpha) ? TT_EXACT : TT_ALPHA, 0, put_adjusted_score(ply, best_score), best_move); 
 
   return best_score;
 

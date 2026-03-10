@@ -17,7 +17,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Cwtch's net
 
-Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd```, then iteratively improved through six generations of self play and training; initially using a diy trainer and more recently with ```bullet```. Currently it's a simple quantised 768->(384*2)->1 squared ReLU architecture, trained on about 600M positions.
+Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd```, then iteratively improved through six generations of self play and training; initially using a diy white-relative trainer and more recently with ```bullet```. Currently it's a simple quantised 768->(384*2)->1 squared ReLU architecture, trained on about 600M positions.
 
 ## References & Acknowledgements
 
@@ -27,4 +27,5 @@ Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved
 - https://talkchess.com - Talkchess forums
 - https://github.com/jw1912/bullet - bullet network trainer
 - https://discord.gg/pntchvGU - Engine Programming Discord
+- https://analog-hors.github.io/site/magic-bitboards - magic bitboards intro
 

@@ -20,12 +20,12 @@
 #include "pv.h"
 #include "see.h"
 
-static int lmr[MAX_PLY][MAX_PLY];
+static int lmr[MAX_PLY][MAX_MOVES];
 
 void init_lmr(void) {
   for (int d = 1; d < MAX_PLY; d++) {
-    for (int m = 1; m < MAX_PLY; m++) {
-      lmr[d][m] = 0.77 + log(d) * log(m) / 2.36;
+    for (int m = 1; m < MAX_MOVES; m++) {
+      lmr[d][m] = 0.77 + log(d) * log(m < 64 ? m : 63) / 2.36;
     }
   }
 }
@@ -179,18 +179,12 @@ int search(const int ply, int depth, int alpha, int beta) {
         int d = depth - 1;
         
         if (depth >= 3 && played >= 3 && is_quiet && !in_check) {
-          const int lmr_m = played >= MAX_PLY ? MAX_PLY - 1 : played;
-          d -= lmr[depth][lmr_m];
-          if (hist > 0)
-            d++;
-          if (d < 1) d = 1;
+          d -= lmr[depth][played];
+          d += (hist > 0);
+          d = (d < 1) ? 1 : d;
         }
 
         score = -search(ply+1, d, -alpha-1, -alpha);
-
-        if (!tc->finished && score > alpha && d < depth - 1) {
-          score = -search(ply+1, depth-1, -alpha-1, -alpha);
-        }
 
         if (!tc->finished && score > alpha) {
           score = -search(ply+1, depth-1, -beta, -alpha);
@@ -202,11 +196,9 @@ int search(const int ply, int depth, int alpha, int beta) {
       int d = depth - 1;
 
       if (depth >= 3 && played >= 2 && is_quiet && !in_check) {
-        const int lmr_m = played >= MAX_PLY ? MAX_PLY - 1 : played;
-        d -= lmr[depth][lmr_m] + 1;
-        if (hist > 0)
-          d++;
-        if (d < 1) d = 1;
+        d -= lmr[depth][played] + 1;
+        d += (hist > 0);
+        d = (d < 1) ? 1 : d;
       }
 
       score = -search(ply+1, d, -beta, -alpha);
