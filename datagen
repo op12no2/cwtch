@@ -12,6 +12,7 @@ THREADS="$3"
 mkdir -p "$DIR"
 
 for i in $(seq 1 "$THREADS"); do
+  sleep $(awk "BEGIN{printf \"%.2f\", rand() * 3}" <<< "$RANDOM")
   ./cwtch "datagen $DIR $HOURS" &
 done
 
