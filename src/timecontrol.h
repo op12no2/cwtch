@@ -10,6 +10,7 @@ typedef struct {
   uint64_t finish_time;
   int max_depth; // iterative deepening depth, MAX_PLY if infinite.
   uint64_t max_nodes;
+  uint64_t hard_nodes;
   volatile uint8_t finished;
   uint64_t nodes;  // node count when searching
   move_t best_move;
@@ -21,5 +22,6 @@ extern TimeControl time_control;
 
 void init_tc(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t max_nodes, int64_t move_time, int max_depth, int moves_to_go);
 void check_tc(void);
+void check_tc_nodes(void);
 
 #endif

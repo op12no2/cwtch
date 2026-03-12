@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$#" -ne 3 ]; then
+  echo "usage: datagen <directory> <hours> <threads>"
+  exit 1
+fi
+
+DIR="$1"
+HOURS="$2"
+THREADS="$3"
+
+mkdir -p "$DIR"
+
+for i in $(seq 1 "$THREADS"); do
+  ./cwtch "datagen $DIR $HOURS" &
+done
+
+echo "launched $THREADS datagen processes for $HOURS hours writing to $DIR"
+wait
+echo "all datagen processes complete"

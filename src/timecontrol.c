@@ -51,6 +51,7 @@ void init_tc(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t m
   }
 
   tc->max_nodes = max_nodes;
+  tc->hard_nodes = max_nodes ? max_nodes * 100 : 0;
   tc->max_depth = max_depth;
 
   tc->finished = 0;
@@ -74,13 +75,22 @@ void check_tc(void) {
     }
   }
 
-  if (tc->max_nodes) {
-    if (tc->nodes >= tc->max_nodes) {
+  if (tc->hard_nodes) {
+    if (tc->nodes >= tc->hard_nodes) {
       tc->finished = 1;
       return;
     }
   }
 
   return;
+
+}
+
+void check_tc_nodes(void) {
+
+  TimeControl *tc = &time_control;
+
+  if (tc->max_nodes && tc->nodes >= tc->max_nodes)
+    tc->finished = 1;
 
 }

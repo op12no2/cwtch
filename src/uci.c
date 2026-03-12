@@ -15,6 +15,7 @@
 #include "bench.h"
 #include "tt.h"
 #include "input.h"
+#include "datagen.h"
 
 #define MAX_TOKENS 1024
 
@@ -209,6 +210,14 @@ bool uci_exec(char *input) {
     if (ntokens > 1)
       depth = atoi(tokens[1]);
     bench(depth);
+  }
+
+  else if (str_eq(cmd, "datagen", "dg")) {
+    if (ntokens < 3) {
+      printf("usage: datagen <directory> <hours>\n");
+      return true;
+    }
+    datagen(tokens[1], atoi(tokens[2]));
   }
 
   else {

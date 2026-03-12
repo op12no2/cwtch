@@ -59,6 +59,10 @@ void go(int silent) {
     if (tc->finished)
       break;
 
+    check_tc_nodes();
+    if (tc->finished)
+      break;
+
     age_piece_to_history();
       
   }

@@ -6,7 +6,7 @@
 - output buckets
 - corrhist
 - conthist
-- caphist 
+- capthist 
 - singular extensions
 - probcut
 - tablebases support
@@ -18,7 +18,6 @@
 
 ### things to try 
 
-- allow init_lmr() to vary m up to MAX_MOVES
 - sort captures using see
 - reduce bad captures in lmr (see)
 - reduce good captures in lmr (see)
