@@ -28,4 +28,4 @@ Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved
 - https://github.com/jw1912/bullet - bullet network trainer
 - https://discord.gg/pntchvGU - Engine Programming Discord
 - https://analog-hors.github.io/site/magic-bitboards - magic bitboards intro
-
+- https://github.com/graphitemaster/incbin - incbin

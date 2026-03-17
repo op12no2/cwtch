@@ -3,7 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "net.h"
-#include "weights.h"
+
+#define INCBIN_PREFIX cwtch_
+#define INCBIN_STYLE INCBIN_STYLE_SNAKE
+#include "incbin.h"
+INCBIN(weights, NET_WEIGHTS_PATH);
 
 static int16_t net_h1_w[NET_I_SIZE * NET_H1_SIZE];
 static int16_t net_h2_w[NET_I_SIZE * NET_H1_SIZE];  // flipped
@@ -31,7 +35,7 @@ static int flip_index(const int index) {
 
 static int get_embedded_weights(int16_t **out, size_t *count_out) {
 
-  size_t bytes = (size_t)cwtch_weights_len;
+  size_t bytes = (size_t)cwtch_weights_size;
 
   if (bytes % sizeof(int16_t) != 0)
     return 0;
@@ -40,7 +44,7 @@ static int get_embedded_weights(int16_t **out, size_t *count_out) {
   if (!buf)
     return 0;
 
-  memcpy(buf, cwtch_weights, bytes);
+  memcpy(buf, cwtch_weights_data, bytes);
 
   *out = buf;
   *count_out = bytes / sizeof(int16_t);
