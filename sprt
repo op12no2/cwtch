@@ -11,7 +11,7 @@ concurrency=16
 book=UHO_Lichess_4852_v1
 
 if [ "$1" = "ltc" ]; then
-  hash=128
+  hash=256
   tc=100+1
   shift
 else

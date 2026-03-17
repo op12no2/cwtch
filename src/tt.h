@@ -9,7 +9,7 @@
 #define TT_ALPHA 2
 #define TT_BETA 4
 
-#define TT_DEFAULT_MB 16
+#define TT_DEFAULT_MB 256
 
 typedef struct {
 
