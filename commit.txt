@@ -1,0 +1,25 @@
+simplify search.
+
+bench 1785926
+
+Results of __cwtch vs __releases_cwtch (10+0.1, NULL, 16MB, UHO_Lichess_4852_v1.epd):
+Elo: 6.44 +/- 3.69, nElo: 10.39 +/- 5.95
+LOS: 99.97 %, DrawRatio: 43.52 %, PairsRatio: 1.11
+Games: 13108, Wins: 3506, Losses: 3263, Draws: 6339, Points: 6675.5 (50.93 %)
+Ptnml(0-2): [202, 1550, 2852, 1703, 247], WL/DD Ratio: 0.85
+LLR: 2.89 (100.1%) (-2.25, 2.89) [0.00, 3.00]
+--------------------------------------------------
+SPRT ([0.00, 3.00]) completed - H1 was accepted
+Finished match
+Total Time: 03:42:19 (hours:minutes:seconds)
+
+Results of __cwtch vs __releases_cwtch (100+1, NULL, 128MB, UHO_Lichess_4852_v1.epd):
+Elo: 10.14 +/- 4.52, nElo: 18.33 +/- 8.16
+LOS: 100.00 %, DrawRatio: 47.93 %, PairsRatio: 1.23
+Games: 6956, Wins: 1708, Losses: 1505, Draws: 3743, Points: 3579.5 (51.46 %)
+Ptnml(0-2): [46, 767, 1667, 934, 64], WL/DD Ratio: 0.63
+LLR: 2.90 (100.3%) (-2.25, 2.89) [0.00, 3.00]
+--------------------------------------------------
+SPRT ([0.00, 3.00]) completed - H1 was accepted
+Finished match
+Total Time: 18:50:36 (hours:minutes:seconds)
