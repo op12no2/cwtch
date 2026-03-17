@@ -29,8 +29,8 @@ void init_tc(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t m
   if (moves_to_go < 2) // stops losses on time
     moves_to_go = 2;
 
-  if (!max_depth)
-    max_depth = MAX_PLY;
+  if (!max_depth || max_depth >= MAX_PLY)
+    max_depth = MAX_PLY - 1;
 
   if (!move_time && stm == WHITE && wtime) {
     move_time = wtime / moves_to_go + winc / 2;

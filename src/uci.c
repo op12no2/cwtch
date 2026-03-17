@@ -137,7 +137,7 @@ bool uci_exec(char *input) {
         max_depth = atoi(tokens[t]);
       }
       else if (str_eq(token, "infinite", "i")) {
-        max_depth = MAX_PLY;
+        max_depth = MAX_PLY - 1;
       }
       else if (str_eq(token, "nodes", "n") && t + 1 < ntokens) {
         t++;
