@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
 
-cp cwtch.rs ../bullet/examples/simple.rs
+cp src/cwtch.rs ../bullet/examples/simple.rs
 cd ../bullet
 cargo r -r --example simple
