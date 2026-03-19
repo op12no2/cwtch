@@ -30,11 +30,11 @@ int new_tt(size_t megabytes) {
   tt         = calloc(tt_entries, sizeof(TT));
 
   if (!tt) {
-    fprintf(stderr, "info failed to allocate tt\n");
+    printf("info string failed to allocate tt\n");
     return 1;
   }
 
-  printf("info tt entries %zu (%zu MB)\n", tt_entries, (tt_entries * sizeof(TT)) / 1024 / 1024);
+  printf("info string tt entries %zu (%zu MB)\n", tt_entries, (tt_entries * sizeof(TT)) / 1024 / 1024);
 
   return 0;
 

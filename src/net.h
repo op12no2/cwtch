@@ -4,6 +4,7 @@
 #include "nodes.h"
 
 int init_weights(void);
+int load_weights_from_file(const char *path);
 int net_eval(Node *node);
 void net_slow_rebuild_accs(Node *node);
 void update_accs(Node *node);

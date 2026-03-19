@@ -18,6 +18,8 @@
 
 ### things to try 
 
+- screlu
+- diy SIMD
 - sort captures using see
 - reduce bad captures in lmr (see)
 - reduce good captures in lmr (see)

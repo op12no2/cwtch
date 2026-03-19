@@ -38,36 +38,7 @@ static int flip_index(const int index) {
 
 }
 
-static int get_embedded_weights(int16_t **out, size_t *count_out) {
-
-  size_t bytes = (size_t)cwtch_weights_size;
-
-  if (bytes % sizeof(int16_t) != 0)
-    return 0;
-
-  int16_t *buf = (int16_t*)malloc(bytes);
-  if (!buf)
-    return 0;
-
-  memcpy(buf, cwtch_weights_data, bytes);
-
-  *out = buf;
-  *count_out = bytes / sizeof(int16_t);
-
-  return 1;
-
-}
-
-int init_weights(void) {
-
-  int16_t *weights = NULL;
-  size_t n = 0;
-
-  if (!get_embedded_weights(&weights, &n)) {
-    free(weights);
-    fprintf(stderr, "cannot load embedded weights\n");
-    return 1;
-  }
+static void unpack_weights(const int16_t *weights) {
 
   size_t offset = 0;
 
@@ -89,8 +60,59 @@ int init_weights(void) {
   offset += NET_H1_SIZE * 2;
   net_o_b = (int32_t)weights[offset];
 
-  free(weights);
+}
 
+int init_weights(void) {
+
+  size_t bytes = (size_t)cwtch_weights_size;
+
+  if (bytes % sizeof(int16_t) != 0) {
+    printf("info string cannot load embedded weights\n");
+    return 1;
+  }
+
+  unpack_weights((const int16_t *)cwtch_weights_data);
+  return 0;
+
+}
+
+int load_weights_from_file(const char *path) {
+
+  FILE *f = fopen(path, "rb");
+  if (!f) {
+    printf("info string cannot open %s\n", path);
+    return 1;
+  }
+
+  fseek(f, 0, SEEK_END);
+  long bytes = ftell(f);
+  fseek(f, 0, SEEK_SET);
+
+  if (bytes <= 0 || bytes % sizeof(int16_t) != 0) {
+    printf("info string invalid weight file size\n");
+    fclose(f);
+    return 1;
+  }
+
+  int16_t *buf = (int16_t *)malloc(bytes);
+  if (!buf) {
+    printf("info string allocation failed\n");
+    fclose(f);
+    return 1;
+  }
+
+  if (fread(buf, 1, bytes, f) != (size_t)bytes) {
+    printf("info string read error\n");
+    free(buf);
+    fclose(f);
+    return 1;
+  }
+
+  fclose(f);
+  unpack_weights(buf);
+  free(buf);
+
+  printf("info string loaded %s\n", path);
   return 0;
 
 }

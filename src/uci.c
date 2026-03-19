@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <time.h>
 #include "types.h"
@@ -47,6 +48,7 @@ bool uci_exec(char *input) {
     printf("id name %s %s\n", "Cwtch", BUILD);
     printf("id author op12no2\n");
     printf("option name Hash type spin default %d min 1 max 1024\n", TT_DEFAULT_MB);
+    printf("option name LoadNet type string default\n");
     printf("uciok\n");
   }
   
@@ -59,9 +61,14 @@ bool uci_exec(char *input) {
   }
 
   else if (str_eq(cmd, "setoption", "")) {
-    if (str_eq(tokens[2], "Hash", "hash")) {
+    if (strcasecmp(tokens[2], "Hash") == 0) {
       int mb = atoi(tokens[4]);
       new_tt(mb);
+    }
+    else if (strcasecmp(tokens[2], "LoadNet") == 0) {
+      if (ntokens >= 5) {
+        load_weights_from_file(tokens[4]);
+      }
     }
   }
 
@@ -203,6 +210,15 @@ bool uci_exec(char *input) {
     printf("perspective:   yes (pre-flipped weights)\n");
     printf("accumulators:  incremental updates in make_move\n");
     printf("quantisation:  QA=%d QB=%d QAB=%d scale=%d\n", NET_QA, NET_QB, NET_QAB, NET_SCALE);
+  }
+
+  else if (str_eq(cmd, "loadnet", "ln")) {
+    if (ntokens < 2) {
+      printf("usage: loadnet <file>\n");
+    }
+    else {
+      load_weights_from_file(tokens[1]);
+    }
   }
 
   else if (str_eq(cmd, "bench", "h")) {
