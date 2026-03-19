@@ -15,6 +15,11 @@ static int16_t net_h1_b[NET_H1_SIZE];
 static int32_t net_o_w [NET_H1_SIZE * 2];
 static int32_t net_o_b;
 
+static inline int32_t screlu(const int32_t x) {
+  const int32_t y = x < 0 ? 0 : (x > NET_QA ? NET_QA : x);
+  return y * y;
+}
+
 static inline int32_t sqrelu(const int32_t x) {
   const int32_t y = x & ~(x >> 31);
   return y * y;
