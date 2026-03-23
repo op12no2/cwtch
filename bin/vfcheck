@@ -22,6 +22,15 @@ FAILED=0
 for f in "$DIR"/*.vf; do
   [ -f "$f" ] || continue
   TOTAL_FILES=$((TOTAL_FILES + 1))
+
+  # check file ends with 4-byte zero terminator (end-of-game marker)
+  TAIL=$(tail -c 4 "$f" | od -An -tx1 | tr -d ' \n')
+  if [ "$TAIL" != "00000000" ]; then
+    echo "FAIL $f (truncated: missing end-of-game marker)"
+    FAILED=$((FAILED + 1))
+    continue
+  fi
+
   OUTPUT=$("$BULLET" viribinpack count "$f" 2>&1) || {
     echo "FAIL $f"
     FAILED=$((FAILED + 1))
