@@ -1,8 +1,20 @@
 #!/bin/bash
 set -e
 
+if [ "$1" = "kill" ]; then
+  PIDS=$(pgrep -f "cwtch datagen" 2>/dev/null || true)
+  if [ -z "$PIDS" ]; then
+    echo "no datagen processes found"
+  else
+    echo "$PIDS" | xargs kill
+    echo "killed $(echo "$PIDS" | wc -l) datagen processes"
+  fi
+  exit 0
+fi
+
 if [ "$#" -ne 3 ]; then
   echo "usage: datagen <directory> <hours> <threads>"
+  echo "       datagen kill"
   exit 1
 fi
 

@@ -15,6 +15,7 @@ if [ ! -x "$BULLET" ]; then
 fi
 
 TOTAL_GAMES=0
+TOTAL_POSITIONS=0
 TOTAL_FILES=0
 FAILED=0
 
@@ -31,6 +32,7 @@ for f in "$DIR"/*.vf; do
   BPP=$(echo "$OUTPUT" | grep "^Bytes" | awk '{print $5}')
   echo "ok   $f  games=$GAMES positions=$POSITIONS bpp=$BPP"
   TOTAL_GAMES=$((TOTAL_GAMES + GAMES))
+  TOTAL_POSITIONS=$((TOTAL_POSITIONS + POSITIONS))
 done
 
 if [ "$TOTAL_FILES" -eq 0 ]; then
@@ -39,7 +41,7 @@ if [ "$TOTAL_FILES" -eq 0 ]; then
 fi
 
 echo ""
-echo "$TOTAL_FILES files, $TOTAL_GAMES games, $FAILED failed"
+echo "$TOTAL_FILES files, $TOTAL_GAMES games, $TOTAL_POSITIONS positions, $FAILED failed"
 
 if [ "$FAILED" -gt 0 ]; then
   exit 1
