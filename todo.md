@@ -1,10 +1,10 @@
 ### todo
 
 - alpha pruning
-- parallel search
+- smp
 - use mat draw in qs
 - output buckets
-- corrhist
+- corrhist(s)
 - conthist
 - capthist 
 - singular extensions
@@ -18,6 +18,7 @@
 
 ### things to try 
 
+- don't compute eval if in check
 - screlu
 - diy SIMD
 - sort captures using see
@@ -45,4 +46,5 @@
 - pruning - set skip_quiets or something
 - lmr - allow jump into qs
 - pruning - alpha > -MATEISH is enough to stop the draw condition firing so no need for && played?
+- history try + from, to.
 

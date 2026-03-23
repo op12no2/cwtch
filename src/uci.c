@@ -202,14 +202,10 @@ bool uci_exec(char *input) {
   }
 
   else if (str_eq(cmd, "net", "n")) {
-    printf("architecture:  perspective NNUE (768 -> %dx2 -> 1)\n", NET_H1_SIZE);
-    printf("inputs:        %d (12 pieces x 64 squares)\n", NET_I_SIZE);
-    printf("hidden:        %d per side (%d total)\n", NET_H1_SIZE, NET_H1_SIZE * 2);
-    printf("output:        1\n");
-    printf("activation:    squared relu\n");
-    printf("perspective:   yes (pre-flipped weights)\n");
-    printf("accumulators:  incremental updates in make_move\n");
-    printf("quantisation:  QA=%d QB=%d QAB=%d scale=%d\n", NET_QA, NET_QB, NET_QAB, NET_SCALE);
+    printf("net: %s\n", NET_WEIGHTS_PATH);
+    printf("arch: NNUE 768->%dx2->1\n", NET_H1_SIZE);
+    printf("act: squared relu\n");
+    printf("quant: QA=%d QB=%d QAB=%d scale=%d\n", NET_QA, NET_QB, NET_QAB, NET_SCALE);
   }
 
   else if (str_eq(cmd, "loadnet", "ln")) {

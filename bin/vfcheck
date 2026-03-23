@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: vfcheck <directory>"
+  exit 1
+fi
+
+DIR="$1"
+BULLET="../bullet/target/release/bullet-utils"
+
+if [ ! -x "$BULLET" ]; then
+  echo "error: bullet-utils not found at $BULLET"
+  exit 1
+fi
+
+TOTAL_GAMES=0
+TOTAL_FILES=0
+FAILED=0
+
+for f in "$DIR"/*.vf; do
+  [ -f "$f" ] || continue
+  TOTAL_FILES=$((TOTAL_FILES + 1))
+  OUTPUT=$("$BULLET" viribinpack count "$f" 2>&1) || {
+    echo "FAIL $f"
+    FAILED=$((FAILED + 1))
+    continue
+  }
+  GAMES=$(echo "$OUTPUT" | grep "^Games" | awk '{print $3}')
+  POSITIONS=$(echo "$OUTPUT" | grep "^Positions" | awk '{print $3}')
+  BPP=$(echo "$OUTPUT" | grep "^Bytes" | awk '{print $5}')
+  echo "ok   $f  games=$GAMES positions=$POSITIONS bpp=$BPP"
+  TOTAL_GAMES=$((TOTAL_GAMES + GAMES))
+done
+
+if [ "$TOTAL_FILES" -eq 0 ]; then
+  echo "no .vf files found in $DIR"
+  exit 1
+fi
+
+echo ""
+echo "$TOTAL_FILES files, $TOTAL_GAMES games, $FAILED failed"
+
+if [ "$FAILED" -gt 0 ]; then
+  exit 1
+fi

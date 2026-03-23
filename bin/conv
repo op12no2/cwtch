@@ -1,7 +1,0 @@
-#!/bin/bash
-set -e
-
-T=/tmp/xyzzy
-MEMORY=40 ~/terashuf/terashuf < $1.fen > $T
-~/bullet/target/release/bullet-utils convert --from text --input $T --output $1.bullet
-rm -f $T

@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+if [ "$#" -gt 1 ]; then
+  echo "usage: sprt [stc|ltc]"
+  exit 1
+fi
+
 rm -f sprt.pgn
 
 e1=./cwtch

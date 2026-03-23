@@ -1,5 +1,12 @@
 #!/bin/bash
 set -e
 
+if [ "$#" -gt 1 ]; then
+  echo "usage: bench [depth]"
+  exit 1
+fi
+
+echo "--- cwtch ---"
 ./cwtch "bench $1"
+echo "--- reference ---"
 ./releases/cwtch "bench $1"

@@ -1,6 +1,20 @@
 #!/bin/bash
 set -e
 
+if [ "$#" -ne 0 ]; then
+  echo "usage: train"
+  exit 1
+fi
+
+grep "const OUTPUT_DIR" src/cwtch.rs
+grep "DATA_FILE" src/cwtch.rs
+grep "const SB" src/cwtch.rs
+grep NET_H1_SIZE src/types.h
+grep "const HIDDEN_SIZE" src/cwtch.rs
+grep NET_WEIGHTS_PATH src/types.h
+grep "acc += w1" src/net.c
+grep "let stm_hidden =" src/cwtch.rs
+
 cp src/cwtch.rs ../bullet/examples/simple.rs
 cd ../bullet
 cargo r -r --example simple

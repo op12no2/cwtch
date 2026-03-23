@@ -12,14 +12,20 @@ Cwtch is a UCI chess engine written in C. As a command line program it needs a c
 - pt [_d_] - perform a set of PERFT searches. If _d_ is present depths greater than _d_ are skipped.
 - et - perform a collection of test evaluations and display evaluation sum.
 - net/n - display network attributes.
+- loadnet/ln [_path_] - load an alternative net specified by _path_.
 
 Commands can be given on the command line, for example: ```./cwtch ucinewgame "position startpos" b "go depth 10"```.
+
+## UCI options
+
+- option name Hash type spin default 256 min 1 max 1024
+- option name LoadNet type string default
 
 ## Cwtch's net
 
 Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd```, then iteratively improved through six generations of self play and training; initially using a diy white-relative trainer and more recently with ```bullet```. Currently it's a simple quantised 768->(384*2)->1 squared ReLU architecture, trained on about 600M positions.
 
-## References & Acknowledgements
+## References & acknowledgements
 
 - https://www.chessprogramming.org/Main_Page - Chess programming wiki
 - https://computerchess.org.uk/ccrl/4040 - CCRL rating list
@@ -29,3 +35,4 @@ Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved
 - https://discord.gg/pntchvGU - Engine Programming Discord
 - https://analog-hors.github.io/site/magic-bitboards - magic bitboards intro
 - https://github.com/graphitemaster/incbin - incbin
+- https://github.com/cosmobobak/viriformat - viriformat

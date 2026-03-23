@@ -1,4 +1,9 @@
 #!/bin/bash
 set -e
 
+if [ "$#" -ne 0 ]; then
+  echo "usage: scanpgn"
+  exit 1
+fi
+
 grep "ermination" sprt.pgn | sort -u
