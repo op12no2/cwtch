@@ -1,20 +1,22 @@
 #!/bin/bash
 set -e
 
+t=src/bullet.rs
+
 if [ "$#" -ne 0 ]; then
   echo "usage: train"
   exit 1
 fi
 
-OUTPUT_DIR=$(grep 'const OUTPUT_DIR' src/cwtch.rs | sed 's/.*"\(.*\)".*/\1/')
-SB=$(grep 'const SB' src/cwtch.rs | sed 's/.*= *\([0-9]*\).*/\1/')
+OUTPUT_DIR=$(grep 'const OUTPUT_DIR' $t | sed 's/.*"\(.*\)".*/\1/')
+SB=$(grep 'const SB' $t | sed 's/.*= *\([0-9]*\).*/\1/')
 WEIGHTS_PATH=$(grep '^#define NET_WEIGHTS_PATH' src/types.h | sed 's/.*"\(.*\)".*/\1/')
 EXPECTED_WEIGHTS="$OUTPUT_DIR/cwtch-$SB/quantised.bin"
 
 echo "trainer dir: $OUTPUT_DIR"
 echo "trainer sb: $SB"
-echo "cwtch weights: $WEIGHTS_PATH"
 echo "trainer weights: $EXPECTED_WEIGHTS"
+echo "cwtch weights: $WEIGHTS_PATH"
 
 if [ "$WEIGHTS_PATH" = "$EXPECTED_WEIGHTS" ]; then
   echo "(weights match)"
@@ -23,7 +25,7 @@ else
 fi
 
 H1_SIZE=$(grep 'NET_H1_SIZE' src/types.h | sed 's/.*define NET_H1_SIZE *\([0-9]*\).*/\1/')
-HIDDEN_SIZE=$(grep 'const HIDDEN_SIZE' src/cwtch.rs | sed 's/.*= *\([0-9]*\).*/\1/')
+HIDDEN_SIZE=$(grep 'const HIDDEN_SIZE' $t | sed 's/.*= *\([0-9]*\).*/\1/')
 
 echo "trainer h1: $H1_SIZE"
 echo "cwtch h1: $HIDDEN_SIZE"
@@ -46,6 +48,6 @@ if [ -d "$OUTPUT_DIR" ]; then
   fi
 fi
 
-cp src/cwtch.rs ../bullet/examples/simple.rs
+cp %t ../bullet/examples/simple.rs
 cd ../bullet
 cargo r -r --example simple

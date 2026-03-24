@@ -6,7 +6,5 @@ if [ "$#" -gt 1 ]; then
   exit 1
 fi
 
-echo "--- cwtch ---"
 ./cwtch "bench $1"
-echo "--- reference ---"
 ./releases/cwtch "bench $1"
