@@ -48,6 +48,6 @@ if [ -d "$OUTPUT_DIR" ]; then
   fi
 fi
 
-cp %t ../bullet/examples/simple.rs
+cp $t ../bullet/examples/simple.rs
 cd ../bullet
 cargo r -r --example simple

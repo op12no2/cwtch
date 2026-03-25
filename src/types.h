@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#define BUILD "5newnet"
+#define BUILD "5zeronet"
 
 #define NET_H1_SIZE 384
 #define NET_I_SIZE 768
@@ -13,8 +13,8 @@
 #define NET_QAB (NET_QA * NET_QB)
 #define NET_SCALE 400
 
-#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/louis/bullet384.bin"
-//#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/ben/cwtch-100/quantised.bin"
+//#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/louis/bullet384.bin"
+#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen3/cwtch-100/quantised.bin"
 
 #define NOT_A_FILE 0xfefefefefefefefeULL
 #define NOT_H_FILE 0x7f7f7f7f7f7f7f7fULL

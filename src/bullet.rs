@@ -13,12 +13,16 @@ use bullet_lib::{
 
 use viriformat::dataformat::Filter;
 
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/ben";
-const DATA_FILE: &str = "/mnt/d/datagen/gen7.vf";
+const DATA_FILES: &[&str] = &[
+    "/mnt/d/datagen/gen1.vf",
+    "/mnt/d/datagen/gen2.vf",
+    "/mnt/d/datagen/gen3.vf",
+];
+const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen3";
 const BUFFER_MB: usize = 512;
 const THREADS: usize = 4;
 const SB: usize = 100;
-const WDL: f32 = 0.4;
+const WDL: f32 = 1.0;
 const HIDDEN_SIZE: usize = 384;
 const SCALE: i32 = 400;
 const QA: i16 = 255;
@@ -76,7 +80,7 @@ fn main() {
     };
 
     let settings = LocalSettings { threads: THREADS, test_set: None, output_directory: OUTPUT_DIR, batch_queue_size: 64 };
-    let data_loader = loader::ViriBinpackLoader::new(DATA_FILE, BUFFER_MB, THREADS, filter);
+    let data_loader = loader::ViriBinpackLoader::new_concat_multiple(DATA_FILES, BUFFER_MB, THREADS, filter);
 
     trainer.run(&schedule, &settings, &data_loader);
 
