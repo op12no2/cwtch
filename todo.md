@@ -19,7 +19,7 @@
 ### things to try 
 
 - don't compute eval if in check
-- screlu
+- screlu - but all magic numbers need retuning
 - diy SIMD
 - sort captures using see
 - reduce bad captures in lmr (see)
