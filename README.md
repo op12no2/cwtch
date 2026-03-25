@@ -13,7 +13,7 @@ Cwtch is a UCI chess engine written in C. As a command line program it needs a c
 - et - perform a collection of test evaluations and display evaluation sum.
 - net|n - display network attributes.
 - loadnet|ln [_path_] - load an alternative net specified by _path_.
-- datagen|dg _path_ _h_ - write self-play games to _path_ in viriformat for _hours_ hours. see also ```bin/datagen```. Configure using the constants in ```src/datagen.c```.
+- datagen|dg _path_ _hours_ - write self-play games to _path_ in viriformat for _hours_ hours. see also ```bin/datagen```. Configure using the constants in ```src/datagen.c```.
 
 Commands can be given on the command line, for example: ```./cwtch ucinewgame "position startpos" b "go depth 10"```.
 

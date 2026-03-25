@@ -24,6 +24,7 @@
 #define DG_DRAW_PLY       40
 #define DG_MAX_GAME_MOVES 512
 #define DG_REPORT_SECS    10
+#define DG_FILE_PREFIX    "data"
 
 // --- viriformat constants ---
 
@@ -306,7 +307,7 @@ void datagen(const char *directory, int hours) {
   dg_seed_rng();
 
   char filename[512];
-  snprintf(filename, sizeof(filename), "%s/data%llu.vf",
+  snprintf(filename, sizeof(filename), "%s/" DG_FILE_PREFIX "%llu.vf",
     directory, (unsigned long long)dg_rand());
 
   FILE *fp = fopen(filename, "wb");
