@@ -302,7 +302,7 @@ static int play_game(FILE *fp) {
 
 // --- main datagen loop ---
 
-void datagen(const char *directory, int hours) {
+void datagen(const char *directory, double hours) {
 
   dg_seed_rng();
 
@@ -319,10 +319,10 @@ void datagen(const char *directory, int hours) {
   static char iobuf[1 << 20];
   setvbuf(fp, iobuf, _IOFBF, sizeof(iobuf));
 
-  printf("datagen: writing to %s for %d hours\n", filename, hours);
+  printf("datagen: writing to %s for %g hours\n", filename, hours);
 
   uint64_t start_time = time_ms();
-  uint64_t end_time = start_time + (uint64_t)hours * 3600ULL * 1000ULL;
+  uint64_t end_time = start_time + (uint64_t)(hours * 3600.0 * 1000.0);
   uint64_t total_positions = 0;
   uint64_t total_games = 0;
   uint64_t last_report = start_time;
@@ -337,10 +337,14 @@ void datagen(const char *directory, int hours) {
     if (now - last_report >= DG_REPORT_SECS * 1000) {
       uint64_t elapsed = now - start_time;
       uint64_t pps = elapsed ? (total_positions * 1000ULL / elapsed) : 0;
-      printf("datagen: %llu positions %llu games %llu pos/s\n",
+      uint64_t remaining_ms = end_time > now ? end_time - now : 0;
+      int rem_h = (int)(remaining_ms / 3600000ULL);
+      int rem_m = (int)((remaining_ms % 3600000ULL) / 60000ULL);
+      printf("datagen: %llu positions %llu games %llu pos/s [%d:%02d left]\n",
         (unsigned long long)total_positions,
         (unsigned long long)total_games,
-        (unsigned long long)pps);
+        (unsigned long long)pps,
+        rem_h, rem_m);
       fflush(stdout);
       fflush(fp);
       last_report = now;

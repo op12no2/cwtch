@@ -229,7 +229,7 @@ bool uci_exec(char *input) {
       printf("usage: datagen <directory> <hours>\n");
       return true;
     }
-    datagen(tokens[1], atoi(tokens[2]));
+    datagen(tokens[1], atof(tokens[2]));
   }
 
   else {

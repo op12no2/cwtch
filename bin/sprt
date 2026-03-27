@@ -9,7 +9,7 @@ fi
 rm -f sprt.pgn
 
 e1=./cwtch
-e2=./releases/cwtch2
+e2=./releases/cwtch
 
 elo0=0
 elo1=3
