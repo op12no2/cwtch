@@ -24,9 +24,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Cwtch's net
 
-Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd```, then iteratively improved through six generations of self play and training; initially using a diy white-relative trainer and more recently with ```bullet```. Currently it's a simple quantised 768->(384*2)->1 squared ReLU architecture, trained on about 600M positions.
-
-WIP: Cwtch's net was booted from a 'zero' random init and iteratively improved over n generations of self-play and training using bullet. It's a straight-forward quantised 768->(384*2)->1 squared ReLU architecture, trained on about mB positions. See ```src/bullet.rs```.
+Cwtch's net was booted from a 'zero' random init and iteratively improved over 7 generations of self-play and training using bullet. It's a straight-forward quantised 768->(384*2)->1 squared ReLU architecture, trained on about 2.2B positions. See ```src/bullet.rs```.
 
 ## References & acknowledgements
 
