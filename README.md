@@ -10,7 +10,7 @@ Cwtch is a UCI chess engine written in C. As a command line program it needs a c
 - board | b - display the board for the current position.
 - perft | f _d_ - performs a PERFT search to depth _d_ on the current position and report nps.
 - pt [_d_] - perform a set of PERFT searches. If _d_ is present depths greater than _d_ are skipped.
-- et - perform a collection of test evaluations and display evaluation sum.
+- et - perform a collection of test evaluations and display an evaluation sum.
 - net | n - display network attributes.
 - loadnet | ln [_path_] - load an alternative net specified by _path_.
 - datagen | dg _path_ _hours_ - write self-play games to _path_ in viriformat for _hours_ hours. see also ```bin/datagen```. Configure using the constants in ```src/datagen.c```.
@@ -24,7 +24,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Cwtch's net
 
-Cwtch's net was booted from a 'zero' random init and iteratively improved over 7 generations of self-play and training using bullet. It's a straight-forward quantised 768->(384*2)->1 squared ReLU architecture, trained on about 2.2B positions. See ```src/bullet.rs```.
+Cwtch's net was booted from a 'zero' random init and iteratively improved over 8 generations of self-play and training using bullet. It's a straight-forward quantised 768->(512*2)->1 squared ReLU architecture; see ```src/bullet.rs```.
 
 ## References & acknowledgements
 

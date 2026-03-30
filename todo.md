@@ -4,6 +4,7 @@
 - smp
 - use mat draw in qs
 - output buckets
+- intput buckets
 - corrhist(s)
 - conthist
 - capthist 
@@ -15,12 +16,12 @@
 - see pruning in qs (fails)
 - history pruning
 - quiet move see pruning (see needs a tweak first)
+- diy SIMD
 
 ### things to try 
 
 - don't compute eval if in check
 - screlu - but all magic numbers need retuning
-- diy SIMD
 - sort captures using see
 - reduce bad captures in lmr (see)
 - reduce good captures in lmr (see)
