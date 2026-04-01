@@ -24,7 +24,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Cwtch's net
 
-Cwtch's net was booted from a 'zero' random init and iteratively improved over 8 generations of self-play and training using bullet. It's a straight-forward quantised 768->(512*2)->1 squared ReLU architecture; see ```src/bullet.rs```.
+Cwtch's net was booted from a 'zero' random init and iteratively improved over 9 generations of self-play and training using bullet. It's a straight-forward quantised 768->(512*2)->1 squared ReLU architecture; see ```src/bullet.rs```.
 
 ## References & acknowledgements
 
@@ -34,6 +34,7 @@ Cwtch's net was booted from a 'zero' random init and iteratively improved over 8
 - https://talkchess.com - Talkchess forums
 - https://github.com/jw1912/bullet - bullet network trainer
 - https://discord.gg/pntchvGU - Engine Programming Discord
-- https://analog-hors.github.io/site/magic-bitboards - magic bitboards intro
+- https://analog-hors.github.io/site/magic-bitboards - Magic bitboards intro
 - https://github.com/graphitemaster/incbin - incbin
 - https://github.com/cosmobobak/viriformat - viriformat
+- https://huggingface.co/datasets/op12no2/cwtch_zero - Cwtch training data

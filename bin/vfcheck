@@ -1,12 +1,13 @@
 #!/bin/bash
 set -e
 
-if [ "$#" -ne 1 ]; then
-  echo "usage: vfcheck <directory>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "usage: vfcheck <directory> [filter]"
   exit 1
 fi
 
 DIR="$1"
+FILTER="${2:-}"
 BULLET="../bullet/target/release/bullet-utils"
 
 if [ ! -x "$BULLET" ]; then
@@ -21,6 +22,9 @@ FAILED=0
 
 for f in "$DIR"/*.vf; do
   [ -f "$f" ] || continue
+  if [ -n "$FILTER" ] && [[ "$(basename "$f")" != *"$FILTER"* ]]; then
+    continue
+  fi
   TOTAL_FILES=$((TOTAL_FILES + 1))
 
   # check file ends with 4-byte zero terminator (end-of-game marker)

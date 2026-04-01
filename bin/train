@@ -8,46 +8,6 @@ if [ "$#" -ne 0 ]; then
   exit 1
 fi
 
-OUTPUT_DIR=$(grep 'const OUTPUT_DIR' $t | sed 's/.*"\(.*\)".*/\1/')
-SB=$(grep 'const SB' $t | sed 's/.*= *\([0-9]*\).*/\1/')
-WEIGHTS_PATH=$(grep '^#define NET_WEIGHTS_PATH' src/types.h | sed 's/.*"\(.*\)".*/\1/')
-EXPECTED_WEIGHTS="$OUTPUT_DIR/cwtch-$SB/quantised.bin"
-
-echo "trainer dir: $OUTPUT_DIR"
-echo "trainer sb: $SB"
-echo "trainer weights: $EXPECTED_WEIGHTS"
-echo "cwtch weights: $WEIGHTS_PATH"
-
-if [ "$WEIGHTS_PATH" = "$EXPECTED_WEIGHTS" ]; then
-  echo "(weights match)"
-else
-  echo "***** WARNING: weights do not match *****"
-fi
-
-H1_SIZE=$(grep 'NET_H1_SIZE' src/types.h | sed 's/.*define NET_H1_SIZE *\([0-9]*\).*/\1/')
-HIDDEN_SIZE=$(grep 'const HIDDEN_SIZE' $t | sed 's/.*= *\([0-9]*\).*/\1/')
-
-echo "trainer h1: $H1_SIZE"
-echo "cwtch h1: $HIDDEN_SIZE"
-
-if [ "$H1_SIZE" = "$HIDDEN_SIZE" ]; then
-  echo "(h1's match)"
-else
-  echo "***** WARNING: h1's do not match *****"
-fi
-
-if [ -d "$OUTPUT_DIR" ]; then
-  echo "***** WARNING: $OUTPUT_DIR already exists *****"
-  read -p "delete it and continue? [y/n] " answer
-  if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-    rm -rf "$OUTPUT_DIR"
-    echo "deleted $OUTPUT_DIR"
-  else
-    echo "aborted"
-    exit 1
-  fi
-fi
-
 cp $t ../bullet/examples/simple.rs
 cd ../bullet
 cargo r -r --example simple
