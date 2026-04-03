@@ -18,21 +18,23 @@ const DATA_FILES: &[&str] = &[
     //"/mnt/d/datagen/gen2.vf",
     //"/mnt/d/datagen/gen3.vf",
     //"/mnt/d/datagen/gen4.vf",
-    //"/mnt/d/datagen/gen5.vf",
-    "/mnt/d/datagen/gen6.vf",
-    "/mnt/d/datagen/gen7.vf",
-    "/mnt/d/datagen/gen8.vf",
-    "/mnt/d/datagen/gen9.vf",
+    //"/tmp/gen5.vf",
+    //"/tmp/gen6.vf",
+    "/tmp/gen7.vf",
+    "/tmp/gen8.vf",
+    "/tmp/gen9.vf",
+    "/tmp/gen10.vf",
 ];
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen9";
-const BUFFER_MB: usize = 512;
+const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen10d";
+const HIDDEN_SIZE: usize = 1024;
+const SB: usize = 250;
+const WDL_START: f32 = 0.4;
+const WDL_END: f32 = 0.6;
 const THREADS: usize = 4;
-const SB: usize = 150;
-const WDL: f32 = 0.4;
-const HIDDEN_SIZE: usize = 512;
 const SCALE: i32 = 400;
 const QA: i16 = 255;
 const QB: i16 = 64;
+const BUFFER_MB: usize = 1024;
 
 fn main() {
 
@@ -66,7 +68,8 @@ fn main() {
             start_superbatch: 1,
             end_superbatch: SB,
         },
-        wdl_scheduler: wdl::ConstantWDL { value: WDL },
+        wdl_scheduler: wdl::ConstantWDL { value: WDL_START },
+        //wdl_scheduler: wdl::LinearWDL { start: WDL_START, end: WDL_END },
         lr_scheduler: lr::Warmup {
             inner: lr::CosineDecayLR {
                 initial_lr: 0.001,

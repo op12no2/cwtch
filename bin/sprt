@@ -9,10 +9,10 @@ fi
 rm -f sprt.pgn
 
 e1=./cwtch
-e2=./releases/cwtch
+e2=./releases/cwtch9
 
 elo0=0
-elo1=3
+elo1=5
 concurrency=15
 book=UHO_Lichess_4852_v1
 

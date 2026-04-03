@@ -24,7 +24,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Cwtch's net
 
-Cwtch's net was booted from a 'zero' random init and iteratively improved over 9 generations of self-play and training using bullet. It's a straight-forward quantised 768->(512*2)->1 squared ReLU architecture; see ```src/bullet.rs```.
+Cwtch's net was booted from a 'zero' random init and iteratively improved over [10 generations](https://huggingface.co/datasets/op12no2/cwtch_zero/tree/main) of self-play and training using bullet. It's a straight-forward quantised 768->(1024*2)->1 squared ReLU architecture; see ```src/bullet.rs```.
 
 ## References & acknowledgements
 
