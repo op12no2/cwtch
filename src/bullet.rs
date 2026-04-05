@@ -14,20 +14,20 @@ use bullet_lib::{
 use viriformat::dataformat::Filter;
 
 const DATA_FILES: &[&str] = &[
-    //"/mnt/d/datagen/gen1.vf",
-    //"/mnt/d/datagen/gen2.vf",
-    //"/mnt/d/datagen/gen3.vf",
-    //"/mnt/d/datagen/gen4.vf",
-    //"/tmp/gen5.vf",
-    //"/tmp/gen6.vf",
-    "/tmp/gen7.vf",
-    "/tmp/gen8.vf",
-    "/tmp/gen9.vf",
-    "/tmp/gen10.vf",
+    //"../datagen/gen1.vf",
+    //"../datagen/gen2.vf",
+    //"../datagen/gen3.vf",
+    //"../datagen/gen4.vf",
+    //"../datagen/gen5.vf",
+    //"../datagen/gen6.vf",
+    "../datagen/gen7.vf",
+    "../datagen/gen8.vf",
+    "../datagen/gen9.vf",
+    "../datagen/gen10.vf",
 ];
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen10d";
+const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen10e";
 const HIDDEN_SIZE: usize = 1024;
-const SB: usize = 250;
+const SB: usize = 1000;
 const WDL_START: f32 = 0.4;
 const WDL_END: f32 = 0.6;
 const THREADS: usize = 4;

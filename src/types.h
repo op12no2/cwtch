@@ -14,7 +14,7 @@
 #define NET_SCALE 400
 
 //#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/louis/bullet384.bin"
-#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen10d/cwtch-250/quantised.bin"
+#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen10e/cwtch-1000/quantised.bin"
 
 #define NOT_A_FILE 0xfefefefefefefefeULL
 #define NOT_H_FILE 0x7f7f7f7f7f7f7f7fULL

@@ -75,8 +75,7 @@ bool uci_exec(char *input) {
   else if (str_eq(cmd, "position", "p")) {
 
     if (is_tt_null()) {
-      printf("info run a ucinewgame command or setoption name Hash value <n> (MB) command first\n");
-      return true;
+      new_game();
     }
     
     const char *fen_option = tokens[1];
@@ -104,8 +103,8 @@ bool uci_exec(char *input) {
   else if (str_eq(cmd, "go", "g")) {
     
     if (is_tt_null()) {
-      printf("info run a ucinewgame command or setoption name Hash value <n> (MB) command first\n");
-      return true;
+      new_game();
+      position(&nodes[0], "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", 0, 0, NULL);
     }
     
     int64_t wtime = 0;
