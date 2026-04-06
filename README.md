@@ -22,10 +22,6 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 - option name Hash type spin default 256 min 1 max 1024
 - option name LoadNet type string default
 
-## Cwtch's net
-
-Cwtch's net was booted from a 'zero' random init and iteratively improved over [10 generations](https://huggingface.co/datasets/op12no2/cwtch_zero/tree/main) of self-play and training using bullet. It's a straight-forward quantised 768->(1024*2)->1 squared ReLU architecture; see ```src/bullet.rs```.
-
 ## References & acknowledgements
 
 - https://www.chessprogramming.org/Main_Page - Chess programming wiki

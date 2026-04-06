@@ -1,28 +1,28 @@
 
+# Version (used in release binary names)
+VERSION := 5
+
 # Configurable paths
 SRC_DIR := src
 BUILD_DIR := build
-BIN_DIR := .
 
 # Output binary
-TARGET := $(BIN_DIR)/cwtch
+TARGET := ./cwtch
 
 # Compiler settings
 CC := clang
-BASE_CFLAGS := -Wall -Wextra -O3 -flto -march=x86-64-v3
-CFLAGS := $(BASE_CFLAGS) -MMD -MP
+CFLAGS := -Wall -Wextra -O3 -flto -march=x86-64-v3 -MMD -MP
 LDFLAGS := -flto -lm -lpthread
 
 # Windows cross-compile settings
 WIN_CC := clang --target=x86_64-w64-mingw32 -fuse-ld=lld
-WIN_TARGET := $(BIN_DIR)/cwtch.exe
+WIN_TARGET := ./cwtch.exe
 WIN_BUILD_DIR := build-win
-WIN_BASE_CFLAGS := -Wall -Wextra -O3 -flto -march=x86-64-v3
-WIN_CFLAGS := $(WIN_BASE_CFLAGS) -MMD -MP
+WIN_CFLAGS := -Wall -Wextra -O3 -flto -march=x86-64-v3 -MMD -MP
 WIN_LDFLAGS := -flto
 
 # Debug settings (for valgrind/gdb)
-DEBUG_CFLAGS := -Wall -Wextra -O1 -g -MMD -MP
+DEBUG_CFLAGS := -Wall -Wextra -O1 -g
 DEBUG_LDFLAGS := -lm -lpthread
 
 # Find all .c files in source directory
@@ -36,24 +36,20 @@ WIN_DEPS := $(WIN_OBJS:.o=.d)
 all: $(TARGET)
 
 # Link
-$(TARGET): $(OBJS) | $(BIN_DIR)
+$(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
 # Compile
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Create directories
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
 
 # Windows cross-compile
 win: $(WIN_TARGET)
 
-$(WIN_TARGET): $(WIN_OBJS) | $(BIN_DIR)
+$(WIN_TARGET): $(WIN_OBJS)
 	$(WIN_CC) $(WIN_OBJS) -o $@ $(WIN_LDFLAGS)
 
 $(WIN_BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(WIN_BUILD_DIR)
@@ -62,60 +58,43 @@ $(WIN_BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(WIN_BUILD_DIR)
 $(WIN_BUILD_DIR):
 	mkdir -p $(WIN_BUILD_DIR)
 
-# PGO settings
-PGO_DIR := build-pgo
-PGO_PROFRAW := $(PGO_DIR)/default_%m.profraw
-PGO_PROFDATA := $(PGO_DIR)/merged.profdata
-PGO_WORKLOAD := ./cwtch "bench 16"
-
-WIN_PGO_DIR := build-pgo-win
-WIN_PGO_PROFRAW := $(WIN_PGO_DIR)/default_%m.profraw
-WIN_PGO_PROFDATA := $(WIN_PGO_DIR)/merged.profdata
-WIN_PGO_WORKLOAD := ./cwtch.exe "bench 16"
-
-# PGO build (Linux)
-pgo:
-	@echo "=== PGO Step 1: Instrumented build ==="
-	rm -rf $(PGO_DIR) $(BUILD_DIR) $(TARGET)
-	mkdir -p $(PGO_DIR)
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(BASE_CFLAGS) -fprofile-generate=$(PGO_DIR) $(SRCS) -o $(TARGET) $(LDFLAGS)
-	@echo "=== PGO Step 2: Running workload ==="
-	LLVM_PROFILE_FILE="$(PGO_PROFRAW)" $(PGO_WORKLOAD)
-	@echo "=== PGO Step 3: Merging profiles ==="
-	llvm-profdata merge -output=$(PGO_PROFDATA) $(PGO_DIR)/*.profraw
-	@echo "=== PGO Step 4: Optimized build ==="
-	$(CC) $(BASE_CFLAGS) -fprofile-use=$(PGO_PROFDATA) $(SRCS) -o $(TARGET) $(LDFLAGS)
-	rm -rf $(PGO_DIR)
-	@echo "=== PGO build complete ==="
-
-# PGO build (Windows cross-compile, runs .exe via WSL2)
-pgo-win:
-	@echo "=== PGO Step 1: Instrumented build ==="
-	rm -rf $(WIN_PGO_DIR) $(WIN_BUILD_DIR) $(WIN_TARGET)
-	mkdir -p $(WIN_PGO_DIR)
-	mkdir -p $(WIN_BUILD_DIR)
-	$(WIN_CC) $(WIN_BASE_CFLAGS) -fprofile-generate=$(WIN_PGO_DIR) $(SRCS) -o $(WIN_TARGET) $(WIN_LDFLAGS)
-	@echo "=== PGO Step 2: Running workload ==="
-	LLVM_PROFILE_FILE="$(WIN_PGO_PROFRAW)" $(WIN_PGO_WORKLOAD)
-	@echo "=== PGO Step 3: Merging profiles ==="
-	llvm-profdata merge -output=$(WIN_PGO_PROFDATA) $(WIN_PGO_DIR)/*.profraw
-	@echo "=== PGO Step 4: Optimized build ==="
-	$(WIN_CC) $(WIN_BASE_CFLAGS) -fprofile-use=$(WIN_PGO_PROFDATA) $(SRCS) -o $(WIN_TARGET) $(WIN_LDFLAGS)
-	rm -rf $(WIN_PGO_DIR)
-	@echo "=== PGO build complete ==="
-
 # Clean
 clean:
-	rm -rf $(BUILD_DIR) $(WIN_BUILD_DIR) $(PGO_DIR) $(WIN_PGO_DIR) $(TARGET) $(WIN_TARGET)
+	rm -rf $(BUILD_DIR) $(WIN_BUILD_DIR) $(TARGET) $(WIN_TARGET)
+	rm -f $(foreach arch,$(RELEASE_ARCHES),releases/cwtch_$(VERSION)_$(arch) releases/cwtch_$(VERSION)_$(arch).exe)
 
 # Rebuild
 rebuild: clean all
 
 # Debug build (for valgrind/gdb)
 debug: clean
-	mkdir -p $(BUILD_DIR)
 	$(CC) $(DEBUG_CFLAGS) $(SRCS) -o $(TARGET) $(DEBUG_LDFLAGS)
+
+# Release architectures
+RELEASE_ARCHES := x86_64 x86_64_v3 x86_64_v4
+RELEASE_DIR := releases
+
+# Release build (all arches, Linux)
+release:
+	mkdir -p $(RELEASE_DIR)
+	@for arch in $(RELEASE_ARCHES); do \
+		echo "=== Building cwtch_$(VERSION)_$$arch ===" ; \
+		march=$$(echo $$arch | sed 's/_/-/g') ; \
+		$(CC) -Wall -Wextra -O3 -flto -march=$$march $(SRCS) -o $(RELEASE_DIR)/cwtch_$(VERSION)_$$arch $(LDFLAGS) ; \
+		echo "  Done: $(RELEASE_DIR)/cwtch_$(VERSION)_$$arch" ; \
+	done
+	@echo "=== Release build complete ==="
+
+# Release build (all arches, Windows)
+release-win:
+	mkdir -p $(RELEASE_DIR)
+	@for arch in $(RELEASE_ARCHES); do \
+		echo "=== Building cwtch_$(VERSION)_$$arch.exe ===" ; \
+		march=$$(echo $$arch | sed 's/_/-/g') ; \
+		$(WIN_CC) -Wall -Wextra -O3 -flto -march=$$march $(SRCS) -o $(RELEASE_DIR)/cwtch_$(VERSION)_$$arch.exe $(WIN_LDFLAGS) ; \
+		echo "  Done: $(RELEASE_DIR)/cwtch_$(VERSION)_$$arch.exe" ; \
+	done
+	@echo "=== Release build complete ==="
 
 -include $(DEPS)
 -include $(WIN_DEPS)
