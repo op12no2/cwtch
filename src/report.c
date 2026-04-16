@@ -21,7 +21,9 @@ void report(int depth) {
   uint64_t elapsed_ms = end_ms - tc->start_time;
   uint64_t nps = (tc->nodes * 1000ULL) / (elapsed_ms ? elapsed_ms : 1);
     
-  printf("info depth %d score cp %d time %lu nodes %lu nps %lu pv %s\n", depth, tc->best_score, elapsed_ms, tc->nodes, nps, pv_str);
+  int normalised_cp = tc->best_score / 1; // via bin/normalise.py
+
+  printf("info depth %d score cp %d time %lu nodes %lu nps %lu pv %s\n", depth, normalised_cp, elapsed_ms, tc->nodes, nps, pv_str);
 
 }
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 t=src/bullet.rs
 
@@ -7,6 +7,15 @@ if [ "$#" -ne 0 ]; then
   echo "usage: train"
   exit 1
 fi
+
+output_dir=$(grep -oP 'const OUTPUT_DIR:.*= *"\K[^"]+' $t)
+
+if [ -n "$output_dir" ]; then
+  mkdir -p "$output_dir"
+fi
+
+cp $t "$output_dir/bullet.rs"
+echo "copied $t to $output_dir/bullet.rs"
 
 cp $t ../bullet/examples/simple.rs
 cd ../bullet

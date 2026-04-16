@@ -17,7 +17,7 @@
 #include "iterate.h"
 #include "net.h"
 
-#define DG_RANDOM_PLIES   8
+#define DG_RANDOM_PLIES   10
 #define DG_SEARCH_NODES   5000
 #define DG_DRAW_SCORE     10
 #define DG_DRAW_COUNT     10
