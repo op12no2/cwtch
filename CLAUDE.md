@@ -53,7 +53,6 @@ src/
   debug.h/c       - Debug verification for incremental updates
   see.h/c         - see_ge()
   datagen.h/c     - Self-play data generation (viriformat output)
-  bullet.rs       - Rust trainer config for the bullet NN trainer (not compiled into cwtch)
 
 ## testing
 
