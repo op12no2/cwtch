@@ -24,7 +24,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Building
 
-You'll need the relevant net. Email me ```op12no2@gmial.com the``` the value of ```NET_WEIGHTS_PATH``` in ```src/types.h``` and I'll send it to you. Then just update that line and ```make release``` or ```make release-win```.
+You'll need the relevant net. Email me ```op12no2@gmail.com the``` the value of ```NET_WEIGHTS_PATH``` in ```src/types.h``` and I'll send it to you. Then just update that as needed line and ```make release``` or ```make release-win``` to create binaries in ```./releases```.
 
 ## References & acknowledgements
 
