@@ -1,0 +1,7 @@
+cwtch
+cwtch.exe
+build/
+build-win/
+/releases
+config.json
+sprt.pgn

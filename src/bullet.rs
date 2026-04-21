@@ -21,17 +21,18 @@ const DATA_FILES: &[&str] = &[
     //"../datagen/gen5.vf",
     //"../datagen/gen6.vf",
     //"../datagen/gen7.vf",
-    "../datagen/gen8.vf",
-    "../datagen/gen9.vf",
-    "../datagen/gen10.vf",
+    //"../datagen/gen8.vf",
+    //"../datagen/gen9.vf",
+    //"../datagen/gen10.vf",
     "../datagen/gen11.vf",
     "../datagen/gen12.vf",
+    "../datagen/gen13.vf",
 ];
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen12";
+const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen13";
 const HIDDEN_SIZE: usize = 1024;
-const SB: usize = 225;
+const SB: usize = 500;
 const WDL_START: f32 = 0.4;
-const WDL_END: f32 = 0.4;
+//const WDL_END: f32 = 0.4;
 const THREADS: usize = 4;
 const SCALE: i32 = 400;
 const QA: i16 = 255;
@@ -70,12 +71,12 @@ fn main() {
             start_superbatch: 1,
             end_superbatch: SB,
         },
-        //wdl_scheduler: wdl::ConstantWDL { value: WDL_START },
-        wdl_scheduler: wdl::LinearWDL { start: WDL_START, end: WDL_END },
+        wdl_scheduler: wdl::ConstantWDL { value: WDL_START },
+        //wdl_scheduler: wdl::LinearWDL { start: WDL_START, end: WDL_END },
         lr_scheduler: lr::Warmup {
             inner: lr::CosineDecayLR {
                 initial_lr: 0.001,
-                final_lr: 0.001 * f32::powi(0.3, 3),
+                final_lr: 0.001 * f32::powi(0.3, 5),
                 final_superbatch: SB,
             },
             warmup_batches: 200,

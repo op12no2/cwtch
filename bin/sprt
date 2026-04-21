@@ -8,8 +8,8 @@ fi
 
 rm -f sprt.pgn
 
-e1=./releases/cwtch12
-e2=./releases/cwtch_5_x86_64_v3
+e1=./cwtch
+e2=./releases/cwtch13
 
 elo0=0
 elo1=3

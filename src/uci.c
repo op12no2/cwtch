@@ -202,6 +202,9 @@ bool uci_exec(char *input) {
 
   else if (str_eq(cmd, "net", "n")) {
     printf("net: %s\n", NET_WEIGHTS_PATH);
+#ifdef NET_SRC
+    printf("source: %s\n", NET_SRC);
+#endif
     printf("arch: NNUE 768->%dx2->1\n", NET_H1_SIZE);
     printf("act: squared relu\n");
     printf("quant: QA=%d QB=%d QAB=%d scale=%d\n", NET_QA, NET_QB, NET_QAB, NET_SCALE);

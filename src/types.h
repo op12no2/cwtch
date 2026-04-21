@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#define BUILD "6zero"
+// BUILD is injected by the makefile from VERSION (-DBUILD=...).
 
 #define NET_H1_SIZE 1024
 #define NET_I_SIZE 768
@@ -13,8 +13,8 @@
 #define NET_QAB (NET_QA * NET_QB)
 #define NET_SCALE 400
 
-//#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/louis/bullet384.bin"
-#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen12d/cwtch-500/quantised.bin"
+// NET_WEIGHTS_PATH is injected by the makefile (-DNET_WEIGHTS_PATH=...).
+// Default is nets/default.bin; override with `make EVALFILE=/path/to/net.bin`.
 
 #define NOT_A_FILE 0xfefefefefefefefeULL
 #define NOT_H_FILE 0x7f7f7f7f7f7f7f7fULL
