@@ -22,6 +22,10 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 - option name Hash type spin default 256 min 1 max 1024
 - option name LoadNet type string default
 
+## Building
+
+You'll need the relevant net. Email me ```op12no2@gmial.com the``` the value of ```NET_WEIGHTS_PATH``` in ```src/types.h``` and I'll send it to you. Then just update that line and ```make release``` or ```make release-win```.
+
 ## References & acknowledgements
 
 - https://www.chessprogramming.org/Main_Page - Chess programming wiki

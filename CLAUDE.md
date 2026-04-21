@@ -16,9 +16,8 @@ Cwtch is a UCI chess engine written in C.
 - `make rebuild`            - Clean and rebuild
 - `make release`            - Build all Linux release binaries into ./releases/ (x86_64, x86_64_v3, x86_64_v4)
 - `make release-win`        - Same as release but .exe for Windows
-- `make EVALFILE=/path/to/net.bin` - Build against a specific net; also updates `nets/default.bin` in the repo (see ## nets)
 
-The makefile injects `-DNET_WEIGHTS_PATH="nets/default.bin"` so net.c can `INCBIN` it. Override with `EVALFILE=`.
+The makefile injects `-DBUILD="$(VERSION)"` — UCI id banner, single source of truth for version (edit `VERSION` at top of makefile; release binary filenames follow suit).
 
 ## source structure
 
@@ -100,10 +99,7 @@ else {
 
 ## nets
 
-- The compiled binary embeds the net via `INCBIN` in `net.c`, reading from the path set by `-DNET_WEIGHTS_PATH=...` (makefile default: `nets/default.bin`).
-- `nets/default.bin` is checked into the repo so the tree is buildable out of the box.
-- On every `make`, the makefile copies `$(EVALFILE)` → `nets/default.bin` (with a `cmp -s` guard so identical contents don't bump mtime and force a rebuild). Commit the updated `nets/default.bin` alongside code changes that assume it.
-- Experimental nets live under `nets/` too (or outside the repo — point `EVALFILE` at them).
+- The compiled binary embeds the net via `INCBIN` in `net.c`. The path is hardwired in `types.h` as `NET_WEIGHTS_PATH`; to build against a different net, edit that line.
 - Config: `NET_H1_SIZE`, `NET_QA`, `NET_QB`, `NET_SCALE` in `types.h`. Current hidden layer is 1024.
 
 ### net architecture
