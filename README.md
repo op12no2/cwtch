@@ -13,7 +13,7 @@ Cwtch is a UCI chess engine written in C. As a command line program it needs a c
 - et - perform a collection of test evaluations and display an evaluation sum.
 - net | n - display network attributes.
 - loadnet | ln [_path_] - load an alternative net specified by _path_.
-- datagen | dg _path_ _hours_ - write self-play games to _path_ in viriformat for _hours_ hours. see also ```bin/datagen```. Configure using the constants in ```src/datagen.c```.
+- datagen | dg _dir_ _hours_ - write self-play games to _dir_ in viriformat for _hours_ hours. see also ```bin/datagen```. Configure using the constants in ```src/datagen.c```.
 
 Commands can be given on the command line, for example: ```./cwtch ucinewgame "position startpos" b "go depth 10"```.
 
@@ -24,7 +24,7 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 ## Building
 
-You'll need the relevant net. Email me ```op12no2@gmail.com the``` the value of ```NET_WEIGHTS_PATH``` in ```src/types.h``` and I'll send it to you. Then just update that as needed line and ```make release``` or ```make release-win``` to create binaries in ```./releases```.
+You'll need the relevant net. Email me ```op12no2@gmail.com the``` the value of ```NET_WEIGHTS_PATH``` in ```src/types.h``` and I'll send it to you. Then just update that line as needed and ```make release``` or ```make release-win``` to create binaries in ```./releases```.
 
 ## References & acknowledgements
 

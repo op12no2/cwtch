@@ -81,7 +81,7 @@ fn main() {
             },
             warmup_batches: 200,
         },
-        save_rate: 25,
+        save_rate: SB,
     };
 
     let filter = Filter {
