@@ -58,6 +58,7 @@ bool uci_exec(char *input) {
   
   else if (str_eq(cmd, "ucinewgame", "u")){
     new_game();
+    position(&nodes[0], "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", 0, 0, NULL);
   }
 
   else if (str_eq(cmd, "setoption", "")) {
@@ -74,10 +75,6 @@ bool uci_exec(char *input) {
 
   else if (str_eq(cmd, "position", "p")) {
 
-    if (is_tt_null()) {
-      new_game();
-    }
-    
     const char *fen_option = tokens[1];
     if (str_eq(fen_option, "startpos", "s")) {
       int num_moves = 0;
@@ -101,12 +98,11 @@ bool uci_exec(char *input) {
   }
   
   else if (str_eq(cmd, "go", "g")) {
-    
-    if (is_tt_null()) {
-      new_game();
-      position(&nodes[0], "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", 0, 0, NULL);
-    }
-    
+
+    if (is_tt_null())
+      new_tt(TT_DEFAULT_MB);
+
+
     int64_t wtime = 0;
     int64_t winc = 0;
     int64_t btime = 0;

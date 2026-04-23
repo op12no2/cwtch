@@ -10,6 +10,7 @@
 #include "search.h"
 #include "see.h"
 #include "input.h"
+#include "position.h"
 
 #define INPUT_BUFFER_SIZE 8192
 
@@ -23,6 +24,8 @@ int main(int argc, char *argv[]) {
   init_zob();
   init_lmr();
   init_line_masks();
+
+  position(&nodes[0], "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", 0, 0, NULL);
 
   // If command-line arguments provided, execute them and exit
   if (argc > 1) {
