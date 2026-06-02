@@ -13,14 +13,18 @@ if [ "$1" = "kill" ]; then
 fi
 
 if [ "$#" -ne 3 ]; then
-  echo "usage: datagen <directory> <hours> <threads>"
+  echo "usage: datagen <directory> <positions> <threads>"
+  echo "       <positions> is the total across all threads (accepts e.g. 1e9)"
   echo "       datagen kill"
   exit 1
 fi
 
 DIR="$1"
-HOURS="$2"
+POSITIONS="$2"
 THREADS="$3"
+
+# split the total target evenly across threads (integer, accepts 1e9 etc)
+PER_THREAD=$(awk "BEGIN{printf \"%d\", $POSITIONS / $THREADS}")
 
 mkdir -p "$DIR"
 
@@ -35,9 +39,9 @@ fi
 
 for i in $(seq 1 "$THREADS"); do
   sleep $(awk "BEGIN{printf \"%.2f\", rand() * 3}" <<< "$RANDOM")
-  ./cwtch "datagen $DIR $HOURS" &
+  ./cwtch "datagen $DIR $PER_THREAD" &
 done
 
-echo "launched $THREADS datagen processes for $HOURS hours writing to $DIR"
+echo "launched $THREADS datagen processes, $PER_THREAD positions each (~$POSITIONS total) writing to $DIR"
 wait
 echo "all datagen processes complete"

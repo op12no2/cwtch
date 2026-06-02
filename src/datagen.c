@@ -302,7 +302,7 @@ static int play_game(FILE *fp) {
 
 // --- main datagen loop ---
 
-void datagen(const char *directory, double hours) {
+void datagen(const char *directory, uint64_t target_positions) {
 
   dg_seed_rng();
 
@@ -319,15 +319,17 @@ void datagen(const char *directory, double hours) {
   static char iobuf[1 << 20];
   setvbuf(fp, iobuf, _IOFBF, sizeof(iobuf));
 
-  printf("datagen: writing to %s for %g hours\n", filename, hours);
+  printf("datagen: writing to %s, target %llu positions\n",
+    filename, (unsigned long long)target_positions);
 
   uint64_t start_time = time_ms();
-  uint64_t end_time = start_time + (uint64_t)(hours * 3600.0 * 1000.0);
   uint64_t total_positions = 0;
   uint64_t total_games = 0;
   uint64_t last_report = start_time;
 
-  while (time_ms() < end_time) {
+  // stop once the target position count is reached; the current game always
+  // completes, so the final file slightly overshoots the target.
+  while (total_positions < target_positions) {
 
     int moves = play_game(fp);
     total_positions += moves;
@@ -337,11 +339,14 @@ void datagen(const char *directory, double hours) {
     if (now - last_report >= DG_REPORT_SECS * 1000) {
       uint64_t elapsed = now - start_time;
       uint64_t pps = elapsed ? (total_positions * 1000ULL / elapsed) : 0;
-      uint64_t remaining_ms = end_time > now ? end_time - now : 0;
-      int rem_h = (int)(remaining_ms / 3600000ULL);
-      int rem_m = (int)((remaining_ms % 3600000ULL) / 60000ULL);
-      printf("datagen: %llu positions %llu games %llu pos/s [%d:%02d left]\n",
+      uint64_t remaining_pos = target_positions > total_positions
+        ? target_positions - total_positions : 0;
+      uint64_t eta_ms = pps ? (remaining_pos * 1000ULL / pps) : 0;
+      int rem_h = (int)(eta_ms / 3600000ULL);
+      int rem_m = (int)((eta_ms % 3600000ULL) / 60000ULL);
+      printf("datagen: %llu/%llu positions %llu games %llu pos/s [%d:%02d left]\n",
         (unsigned long long)total_positions,
+        (unsigned long long)target_positions,
         (unsigned long long)total_games,
         (unsigned long long)pps,
         rem_h, rem_m);

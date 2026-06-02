@@ -221,10 +221,10 @@ bool uci_exec(char *input) {
 
   else if (str_eq(cmd, "datagen", "dg")) {
     if (ntokens < 3) {
-      printf("usage: datagen <directory> <hours>\n");
+      printf("usage: datagen <directory> <positions>\n");
       return true;
     }
-    datagen(tokens[1], atof(tokens[2]));
+    datagen(tokens[1], (uint64_t)atof(tokens[2]));
   }
 
   else {

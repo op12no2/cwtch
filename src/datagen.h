@@ -1,6 +1,8 @@
 #ifndef DATAGEN_H
 #define DATAGEN_H
 
-void datagen(const char *directory, double hours);
+#include <stdint.h>
+
+void datagen(const char *directory, uint64_t target_positions);
 
 #endif

@@ -6,7 +6,7 @@
 
 // BUILD is injected by the makefile from VERSION (-DBUILD=...).
 
-#define NET_H1_SIZE 1024
+#define NET_H1_SIZE 384
 #define NET_I_SIZE 768
 #define NET_QA 255
 #define NET_QB 64
@@ -15,7 +15,7 @@
 
 // Path to the weights file embedded via INCBIN in net.c. Hardwired; to build
 // against a different net, edit this line.
-#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen15a/cwtch-500/quantised.bin"
+#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/louis/bullet384.bin"
 
 #define NOT_A_FILE 0xfefefefefefefefeULL
 #define NOT_H_FILE 0x7f7f7f7f7f7f7f7fULL
