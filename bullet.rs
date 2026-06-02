@@ -24,11 +24,13 @@ const DATA_FILES: &[&str] = &[
     //"../datagen/gen8.vf",
     //"../datagen/gen9.vf",
     //"../datagen/gen10.vf",
-    "../datagen/gen11.vf",
-    "../datagen/gen12.vf",
-    "../datagen/gen13.vf",
+    //"../datagen/gen11.vf",
+    //"../datagen/gen12.vf",
+    //"../datagen/gen13.vf",
+    "../datagen/gen14.vf",
+    "../datagen/gen15.vf",
 ];
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen13";
+const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen15a";
 const HIDDEN_SIZE: usize = 1024;
 const SB: usize = 500;
 const WDL_START: f32 = 0.4;
