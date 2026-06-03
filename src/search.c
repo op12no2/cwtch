@@ -40,7 +40,7 @@ int search(const int ply, int depth, int alpha, int beta) {
 
   if (ply >= MAX_PLY-1) {
     lazy_update_accs(node);
-    return net_eval(node);
+    return corrhist_correct(pos, net_eval(node));
   }
 
   // store hash for repetition detection (ply 0 already in hh from position())
@@ -97,7 +97,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   }
 
   lazy_update_accs(node);
-  const int16_t ev = net_eval(node);
+  const int ev = corrhist_correct(pos, net_eval(node));
 
   // beta pruning
   if (!is_pv && !in_check && depth <= 8 && ev >= beta + (100 * depth)) {
@@ -232,8 +232,10 @@ int search(const int ply, int depth, int alpha, int beta) {
               const move_t pm = node->played[i];
               if (!(pm & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))) {
                 update_piece_to_history(pos, pm, -bonus);
-              }  
-            }  
+              }
+            }
+            if (!in_check && best_score > -MATEISH && best_score < MATEISH)
+              update_corrhist(pos, depth, best_score - ev);
           }
           tt_put(pos, TT_BETA, depth, put_adjusted_score(ply, best_score), best_move);
           return score;
@@ -243,8 +245,13 @@ int search(const int ply, int depth, int alpha, int beta) {
   }
 
   if (played == 0) {
-    return in_check ? (-MATE + ply) : 0; 
+    return in_check ? (-MATE + ply) : 0;
   }
+
+  if (!in_check
+      && !(best_move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))
+      && best_score > -MATEISH && best_score < MATEISH)
+    update_corrhist(pos, depth, best_score - ev);
 
   tt_put(pos, (alpha > orig_alpha) ? TT_EXACT : TT_ALPHA, depth, put_adjusted_score(ply, best_score), best_move);
 

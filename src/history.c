@@ -8,6 +8,37 @@
 #include "nodes.h"
 
 int16_t piece_to_history[12][64];
+int16_t pawn_corrhist[2][CORRHIST_SIZE];
+
+void clear_corrhist(void) {
+  memset(pawn_corrhist, 0, sizeof(pawn_corrhist));
+}
+
+// EMA toward the depth-weighted search-vs-eval error for this pawn structure.
+void update_corrhist(const Position *pos, const int depth, int diff) {
+
+  if (diff > CORRHIST_DIFF_MAX)
+    diff = CORRHIST_DIFF_MAX;
+  else if (diff < -CORRHIST_DIFF_MAX)
+    diff = -CORRHIST_DIFF_MAX;
+
+  int16_t *const entry = &pawn_corrhist[pos->stm][pawn_key(pos) & CORRHIST_MASK];
+
+  int weight = depth + 1;
+  if (weight > CORRHIST_WEIGHT_MAX)
+    weight = CORRHIST_WEIGHT_MAX;
+
+  const int target = diff * CORRHIST_GRAIN;
+  int v = (*entry * (CORRHIST_WEIGHT_SCALE - weight) + target * weight) / CORRHIST_WEIGHT_SCALE;
+
+  if (v > CORRHIST_MAX)
+    v = CORRHIST_MAX;
+  else if (v < -CORRHIST_MAX)
+    v = -CORRHIST_MAX;
+
+  *entry = (int16_t)v;
+
+}
 
 void age_piece_to_history(void) {
   for (int i=0; i < 12; i++) {

@@ -12,6 +12,7 @@
 #include "net.h"
 #include "tt.h"
 #include "see.h"
+#include "history.h"
 #include "debug.h"
 #include "pv.h"
 
@@ -25,7 +26,7 @@ int qsearch(const int ply, int alpha, const int beta) {
 
   if (ply >= MAX_PLY-1) {
     lazy_update_accs(node);
-    return net_eval(node);
+    return corrhist_correct(pos, net_eval(node));
   }
 
   //if (is_mat_draw(pos))
@@ -37,7 +38,7 @@ int qsearch(const int ply, int alpha, const int beta) {
   const int in_check = 0; //is_attacked(pos, bsf(pos->all[stm_king_idx]), opp); // for minor move gen captures optimisation only
 
   lazy_update_accs(node);
-  int stand_pat = net_eval(node);
+  int stand_pat = corrhist_correct(pos, net_eval(node));
 
   if (stand_pat >= beta) {
     return stand_pat;
