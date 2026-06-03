@@ -342,14 +342,26 @@ void datagen(const char *directory, uint64_t target_positions) {
       uint64_t remaining_pos = target_positions > total_positions
         ? target_positions - total_positions : 0;
       uint64_t eta_ms = pps ? (remaining_pos * 1000ULL / pps) : 0;
-      int rem_h = (int)(eta_ms / 3600000ULL);
-      int rem_m = (int)((eta_ms % 3600000ULL) / 60000ULL);
-      printf("datagen: %llu/%llu positions %llu games %llu pos/s [%d:%02d left]\n",
+      double pct = target_positions ? (100.0 * total_positions / target_positions) : 0.0;
+
+      int eta_s = (int)(eta_ms / 1000ULL);
+      int eta_d = eta_s / 86400;
+      int eta_h = (eta_s % 86400) / 3600;
+      int eta_m = (eta_s % 3600) / 60;
+
+      char eta[32];
+      if (eta_d > 0)
+        snprintf(eta, sizeof eta, "%dd %02d:%02d", eta_d, eta_h, eta_m);
+      else
+        snprintf(eta, sizeof eta, "%d:%02d", eta_h, eta_m);
+
+      printf("datagen: %llu/%llu positions (%.1f%%) %llu games %llu pos/s [%s left]\n",
         (unsigned long long)total_positions,
         (unsigned long long)target_positions,
+        pct,
         (unsigned long long)total_games,
         (unsigned long long)pps,
-        rem_h, rem_m);
+        eta);
       fflush(stdout);
       fflush(fp);
       last_report = now;
