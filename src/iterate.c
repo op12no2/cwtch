@@ -30,10 +30,10 @@ static move_t get_next_sorted_move(Node *const node) {
 
   move_t max_m  = 0;
   move_t *moves = node->moves;
-  int16_t *ranks = node->ranks;
+  int32_t *ranks = node->ranks;
   const int next = node->next_move;
   const int num = node->num_moves;
-  int16_t max_r = INT16_MIN;
+  int32_t max_r = INT32_MIN;
   int max_i;
 
   for (int i=next; i < num; i++) {
@@ -59,24 +59,25 @@ static void rank_quiets(Node *node) {
   const uint8_t *board = node->pos.board;
   const move_t *moves = node->moves;
   const move_t killer = node->killer;
-  int16_t *ranks = node->ranks;
+  int32_t *ranks = node->ranks;
+  int16_t (*const cont)[64] = node->cont_entry;
   const int n = node->num_moves;
 
   for (int i=0; i < n; i++) {
 
     const move_t m = moves[i];
-    
+
     if (m == killer) {
       ranks[i] = KILLER;
     }
-    
+
     else {
 
       const int from = (m >> 6) & 0x3F;
       const int to = m & 0x3F;
       const int piece = board[from];
-    
-      ranks[i] = piece_to_history[piece][to];
+
+      ranks[i] = piece_to_history[piece][to] + (cont ? cont[piece][to] : 0);
     }
 
   }
@@ -86,7 +87,7 @@ static void rank_noisy(Node *node) {
 
   const uint8_t *board = node->pos.board;
   const move_t *moves = node->moves;
-  int16_t *ranks = node->ranks;
+  int32_t *ranks = node->ranks;
   const int n = node->num_moves;
 
   for (int i=0; i < n; i++) {

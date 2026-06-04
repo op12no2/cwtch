@@ -18,6 +18,7 @@ void go(int silent) {
 
   hh_set_root();
   clear_piece_to_history();
+  clear_cont_history();
   clear_nodes();
 
   for (int depth=1; depth <= tc->max_depth; depth++) {
@@ -64,7 +65,8 @@ void go(int silent) {
       break;
 
     age_piece_to_history();
-      
+    age_cont_history();
+
   }
 
   format_move(tc->best_move, bm_str);

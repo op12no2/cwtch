@@ -31,12 +31,13 @@ typedef struct {
   move_t moves[MAX_MOVES];
   move_t played[MAX_MOVES];
   int num_moves;
-  int16_t ranks[MAX_MOVES];
+  int32_t ranks[MAX_MOVES];
   int next_move;
   int in_check;
   move_t tt_move;
   int stage;
   move_t killer;
+  int16_t (*cont_entry)[64];  // cont_hist sub-table for the move that led here; NULL at root / after null
 
 } Node;
 

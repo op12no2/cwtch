@@ -8,9 +8,10 @@
 #include "nodes.h"
 
 #define MAX_HISTORY 32766
-#define KILLER 32767
+#define KILLER (1 << 24)   // above any piece_to + conthist rank sum (ranks are int32)
 
 extern int16_t piece_to_history[12][64];
+extern int16_t cont_hist[12][64][12][64];   // [prev piece][prev to][piece][to]
 
 inline void clear_piece_to_history(void) {
   memset(piece_to_history, 0, sizeof(piece_to_history));
@@ -19,6 +20,10 @@ inline void clear_piece_to_history(void) {
 void update_piece_to_history(const Position *pos, const move_t move, int bonus);
 void update_killer(Node *node, const move_t move);
 void age_piece_to_history(void);
+
+void clear_cont_history(void);
+void age_cont_history(void);
+void update_cont_history(Node *node, const Position *pos, const move_t move, int bonus);
 
 // --- pawn correction history -------------------------------------------------
 // Adjusts the static eval by the historical (search - eval) error seen for the
