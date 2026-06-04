@@ -97,7 +97,9 @@ int search(const int ply, int depth, int alpha, int beta) {
   }
 
   lazy_update_accs(node);
-  const int ev = corrhist_correct(pos, net_eval(node));
+  // ev is only read in !in_check branches (rfp/nmp/futility/corrhist), so skip
+  // the eval entirely when in check. lazy_update_accs stays: children copy these accs.
+  const int ev = in_check ? 0 : corrhist_correct(pos, net_eval(node));
 
   // beta pruning
   if (!is_pv && !in_check && depth <= 8 && ev >= beta + (100 * depth)) {
