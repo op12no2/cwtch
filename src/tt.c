@@ -4,7 +4,6 @@
 #include <string.h>
 #include "types.h"
 #include "tt.h"
-#include "history.h"
 
 static TT *tt = NULL;
 static size_t tt_entries = 0;
@@ -110,7 +109,6 @@ void new_game(void) {
     new_tt(TT_DEFAULT_MB);
 
   tt_clear();
-  clear_corrhist();
 
 }
 

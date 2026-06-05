@@ -40,7 +40,7 @@ int search(const int ply, int depth, int alpha, int beta) {
 
   if (ply >= MAX_PLY-1) {
     lazy_update_accs(node);
-    return corrhist_correct(pos, net_eval(node));
+    return net_eval(node);
   }
 
   // store hash for repetition detection (ply 0 already in hh from position())
@@ -97,9 +97,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   }
 
   lazy_update_accs(node);
-  // ev is only read in !in_check branches (rfp/nmp/futility/corrhist), so skip
-  // the eval entirely when in check. lazy_update_accs stays: children copy these accs.
-  const int ev = in_check ? 0 : corrhist_correct(pos, net_eval(node));
+  const int16_t ev = net_eval(node);
 
   // beta pruning
   if (!is_pv && !in_check && depth <= 8 && ev >= beta + (100 * depth)) {
@@ -118,7 +116,6 @@ int search(const int ply, int depth, int alpha, int beta) {
     make_null_move(next_pos);
     memcpy(next_node->accs, node->accs, sizeof(node->accs));
     next_node->accs_dirty = 0;
-    next_node->cont_entry = NULL;
 
     const int score = -search(ply+1, nmp_depth, -beta, -beta+1);
   
@@ -156,18 +153,20 @@ int search(const int ply, int depth, int alpha, int beta) {
     if (!is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 2 && played && !see_ge(pos, move, 0))
       continue;
 
-    const int from = (move >> 6) & 0x3F;
-    const int to = move & 0x3F;
-    const int moved_piece = pos->board[from];
-    const int hist = is_quiet ? piece_to_history[moved_piece][to] : 0;
-
+    int hist = 0;
+    if (is_quiet) {
+      const int from = (move >> 6) & 0x3F;
+      const int to = move & 0x3F;
+      const int piece = pos->board[from];
+      hist = piece_to_history[piece][to];
+    }
+    
     pos_copy(pos, next_pos);
     make_move(next_node, move);
     if (is_attacked(next_pos, bsf(*next_stm_king_ptr), opp))
       continue;
 
     next_node->accs_dirty = 1;
-    next_node->cont_entry = cont_hist[moved_piece][to];
 
     node->played[played++] = move;
 
@@ -229,16 +228,12 @@ int search(const int ply, int depth, int alpha, int beta) {
             update_killer(node, best_move);
             const int bonus = depth * depth;
             update_piece_to_history(pos, best_move, bonus);
-            update_cont_history(node, pos, best_move, bonus);
             for (int i=0; i < played-1; i++) {
               const move_t pm = node->played[i];
               if (!(pm & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))) {
                 update_piece_to_history(pos, pm, -bonus);
-                update_cont_history(node, pos, pm, -bonus);
-              }
-            }
-            if (!in_check && best_score > -MATEISH && best_score < MATEISH)
-              update_corrhist(pos, depth, best_score - ev);
+              }  
+            }  
           }
           tt_put(pos, TT_BETA, depth, put_adjusted_score(ply, best_score), best_move);
           return score;
@@ -248,13 +243,8 @@ int search(const int ply, int depth, int alpha, int beta) {
   }
 
   if (played == 0) {
-    return in_check ? (-MATE + ply) : 0;
+    return in_check ? (-MATE + ply) : 0; 
   }
-
-  if (!in_check
-      && !(best_move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))
-      && best_score > -MATEISH && best_score < MATEISH)
-    update_corrhist(pos, depth, best_score - ev);
 
   tt_put(pos, (alpha > orig_alpha) ? TT_EXACT : TT_ALPHA, depth, put_adjusted_score(ply, best_score), best_move);
 

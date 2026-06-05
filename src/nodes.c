@@ -9,7 +9,6 @@ void clear_nodes(void) {
     Node *node = &nodes[i];
 
     node->killer = 0;
-    node->cont_entry = NULL;
 
   }  
 
