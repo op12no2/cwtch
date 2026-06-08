@@ -17,7 +17,6 @@ void go(int silent) {
   int score = 0;
 
   hh_set_root();
-  clear_piece_to_history();
   clear_nodes();
 
   for (int depth=1; depth <= tc->max_depth; depth++) {
@@ -63,8 +62,6 @@ void go(int silent) {
     if (tc->finished)
       break;
 
-    age_piece_to_history();
-      
   }
 
   format_move(tc->best_move, bm_str);

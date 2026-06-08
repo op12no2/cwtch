@@ -18,6 +18,5 @@ inline void clear_piece_to_history(void) {
 
 void update_piece_to_history(const Position *pos, const move_t move, int bonus);
 void update_killer(Node *node, const move_t move);
-void age_piece_to_history(void);
 
 #endif
