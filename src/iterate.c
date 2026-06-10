@@ -60,23 +60,26 @@ static void rank_quiets(Node *node) {
   const move_t *moves = node->moves;
   const move_t killer = node->killer;
   int16_t *ranks = node->ranks;
+  int16_t (*const cont)[64] = node->cont_entry;
   const int n = node->num_moves;
 
   for (int i=0; i < n; i++) {
 
     const move_t m = moves[i];
-    
+
     if (m == killer) {
       ranks[i] = KILLER;
     }
-    
+
     else {
 
       const int from = (m >> 6) & 0x3F;
       const int to = m & 0x3F;
       const int piece = board[from];
-    
-      ranks[i] = piece_to_history[piece][to];
+
+      // average keeps the sum within int16 (and below KILLER)
+      ranks[i] = cont ? (piece_to_history[piece][to] + cont[piece][to]) / 2
+                      : piece_to_history[piece][to];
     }
 
   }

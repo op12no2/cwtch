@@ -111,6 +111,7 @@ void new_game(void) {
 
   tt_clear();
   clear_piece_to_history();
+  clear_cont_history();
 
 }
 

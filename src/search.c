@@ -116,6 +116,7 @@ int search(const int ply, int depth, int alpha, int beta) {
     make_null_move(next_pos);
     memcpy(next_node->accs, node->accs, sizeof(node->accs));
     next_node->accs_dirty = 0;
+    next_node->cont_entry = NULL;
 
     const int score = -search(ply+1, nmp_depth, -beta, -beta+1);
   
@@ -153,20 +154,18 @@ int search(const int ply, int depth, int alpha, int beta) {
     if (!is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 2 && played && !see_ge(pos, move, 0))
       continue;
 
-    int hist = 0;
-    if (is_quiet) {
-      const int from = (move >> 6) & 0x3F;
-      const int to = move & 0x3F;
-      const int piece = pos->board[from];
-      hist = piece_to_history[piece][to];
-    }
-    
+    const int from = (move >> 6) & 0x3F;
+    const int to = move & 0x3F;
+    const int moved_piece = pos->board[from];
+    const int hist = is_quiet ? piece_to_history[moved_piece][to] : 0;
+
     pos_copy(pos, next_pos);
     make_move(next_node, move);
     if (is_attacked(next_pos, bsf(*next_stm_king_ptr), opp))
       continue;
 
     next_node->accs_dirty = 1;
+    next_node->cont_entry = cont_hist[moved_piece][to];
 
     node->played[played++] = move;
 
@@ -230,12 +229,14 @@ int search(const int ply, int depth, int alpha, int beta) {
             if (bonus > 2048)
               bonus = 2048;
             update_piece_to_history(pos, best_move, bonus);
+            update_cont_history(node, pos, best_move, bonus);
             for (int i=0; i < played-1; i++) {
               const move_t pm = node->played[i];
               if (!(pm & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))) {
                 update_piece_to_history(pos, pm, -bonus);
-              }  
-            }  
+                update_cont_history(node, pos, pm, -bonus);
+              }
+            }
           }
           tt_put(pos, TT_BETA, depth, put_adjusted_score(ply, best_score), best_move);
           return score;

@@ -37,6 +37,7 @@ typedef struct {
   move_t tt_move;
   int stage;
   move_t killer;
+  int16_t (*cont_entry)[64];  // cont_hist sub-table for the move that led here; NULL at root / after null
 
 } Node;
 
