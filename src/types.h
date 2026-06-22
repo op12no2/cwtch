@@ -15,7 +15,7 @@
 
 // Path to the weights file embedded via INCBIN in net.c. Hardwired; to build
 // against a different net, edit this line.
-#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen5a/cwtch-200/quantised.bin"
+#define NET_WEIGHTS_PATH "/mnt/d/bulletnets/gen6/cwtch-200/quantised.bin"
 
 #define NOT_A_FILE 0xfefefefefefefefeULL
 #define NOT_H_FILE 0x7f7f7f7f7f7f7f7fULL

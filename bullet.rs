@@ -14,9 +14,10 @@ use bullet_lib::{
 use viriformat::dataformat::Filter;
 
 const DATA_FILES: &[&str] = &[
+    "../datagen/gen6.vf",
     "../datagen/gen5.vf",
 ];
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen5a";
+const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen6";
 const HIDDEN_SIZE: usize = 512;
 const SB: usize = 200;
 const WDL_START: f32 = 0.4;
