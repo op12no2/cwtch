@@ -37,4 +37,3 @@ You'll need the relevant net. Email me ```op12no2@gmail.com the``` the value of 
 - https://analog-hors.github.io/site/magic-bitboards - Magic bitboards intro
 - https://github.com/graphitemaster/incbin - incbin
 - https://github.com/cosmobobak/viriformat - viriformat
-- https://huggingface.co/datasets/op12no2/cwtch_zero - Cwtch training data

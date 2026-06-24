@@ -57,6 +57,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   const int in_check = is_attacked(pos, bsf(pos->all[stm_king_idx]), opp);
   const int is_root = ply == 0;
   const int is_pv = is_root || (beta - alpha != 1);
+  const move_t excluded = node->excluded_move;
 
   if (depth <= 0 && in_check == 0) {
     return qsearch(ply, alpha, beta);
@@ -81,7 +82,7 @@ int search(const int ply, int depth, int alpha, int beta) {
     return alpha;
 
   const TT *entry = tt_get(pos);
-  if (!is_pv && entry && entry->depth >= depth) {
+  if (!is_pv && !excluded && entry && entry->depth >= depth) {
     const int tt_flags = entry->flags;
     const int tt_score = get_adjusted_score(ply, entry->score);
     if (tt_flags == TT_EXACT || (tt_flags == TT_BETA && tt_score >= beta) || (tt_flags == TT_ALPHA && tt_score <= alpha)) {
@@ -89,10 +90,14 @@ int search(const int ply, int depth, int alpha, int beta) {
     }
   }
 
+  // capture tt fields before null move search can overwrite the entry slot
   const move_t tt_move = entry ? entry->move : 0;
-  
+  const int tt_depth = entry ? entry->depth : 0;
+  const int tt_flags = entry ? entry->flags : 0;
+  const int tt_score = entry ? get_adjusted_score(ply, entry->score) : 0;
+
   //iir
-  if (!in_check && depth >= 4 && (!tt_move || (entry && entry->depth + 4 < depth))) {
+  if (!in_check && !excluded && depth >= 4 && (!tt_move || (entry && entry->depth + 4 < depth))) {
     depth--;
   }
 
@@ -100,7 +105,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   const int16_t ev = net_eval(node);
 
   // beta pruning
-  if (!is_pv && !in_check && depth <= 8 && ev >= beta + (100 * depth)) {
+  if (!is_pv && !excluded && !in_check && depth <= 8 && ev >= beta + (100 * depth)) {
     return ev;
   }
 
@@ -108,7 +113,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   Position *next_pos = &next_node->pos;
 
   // null move pruning
-  if (!is_pv && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(pos)) {
+  if (!is_pv && !excluded && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(pos)) {
   
     const int nmp_depth = depth - 4;
   
@@ -140,8 +145,11 @@ int search(const int ply, int depth, int alpha, int beta) {
 
   while ((move = get_next_search_move(node))) {
 
+    if (move == excluded)
+      continue;
+
     const int is_quiet = !(move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE));
-    
+
     // lmp
     if (is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 2 && played > (5 * depth))
       continue;
@@ -153,6 +161,32 @@ int search(const int ply, int depth, int alpha, int beta) {
     // see pruning
     if (!is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 2 && played && !see_ge(pos, move, 0))
       continue;
+
+    // singular extensions
+    int extension = 0;
+    if (!is_root && !excluded && depth >= 8 && move == tt_move
+        && tt_depth + 4 >= depth && tt_flags != TT_ALPHA
+        && tt_score > -MATEISH && tt_score < MATEISH) {
+
+      const int s_beta = tt_score - 8 * depth;
+      const int s_depth = (depth - 1) / 2;
+
+      node->excluded_move = tt_move;
+      const int s_score = search(ply, s_depth, s_beta - 1, s_beta);
+      node->excluded_move = 0;
+      node->stage = 1;          // restore: tt-move already returned, generate noisy next
+      node->tt_move = tt_move;  // defensive (verification reset it to the same value)
+
+      if (tc->finished)
+        return 0;
+
+      if (s_score < s_beta)       // no other move reaches s_beta -> tt-move is singular
+        extension = 1;
+      else if (s_beta >= beta)    // verification already fails high -> multicut
+        return s_beta;
+      else if (tt_score >= beta)  // not singular and likely fails high -> search less
+        extension = -1;
+    }
 
     const int from = (move >> 6) & 0x3F;
     const int to = move & 0x3F;
@@ -169,14 +203,16 @@ int search(const int ply, int depth, int alpha, int beta) {
 
     node->played[played++] = move;
 
+    const int new_depth = depth - 1 + extension;
+
     if (is_pv) {
       if (played == 1) { // pv move 1
-        score = -search(ply+1, depth-1, -beta, -alpha);
+        score = -search(ply+1, new_depth, -beta, -alpha);
       }
       else { // pv move > 1
-        
-        int d = depth - 1;
-        
+
+        int d = new_depth;
+
         if (depth >= 3 && played >= 3 && is_quiet && !in_check) {
           d -= lmr[depth][played];
           d += (hist > 0);
@@ -186,13 +222,13 @@ int search(const int ply, int depth, int alpha, int beta) {
         score = -search(ply+1, d, -alpha-1, -alpha);
 
         if (!tc->finished && score > alpha) {
-          score = -search(ply+1, depth-1, -beta, -alpha);
+          score = -search(ply+1, new_depth, -beta, -alpha);
         }
       }
     }
     else { // not pv
-      
-      int d = depth - 1;
+
+      int d = new_depth;
 
       if (depth >= 3 && played >= 2 && is_quiet && !in_check) {
         d -= lmr[depth][played] + 1;
@@ -202,8 +238,8 @@ int search(const int ply, int depth, int alpha, int beta) {
 
       score = -search(ply+1, d, -beta, -alpha);
 
-      if (!tc->finished && score > alpha && d < depth - 1) {
-        score = -search(ply+1, depth-1, -beta, -alpha);
+      if (!tc->finished && score > alpha && d < new_depth) {
+        score = -search(ply+1, new_depth, -beta, -alpha);
       }
     }
 
@@ -238,7 +274,8 @@ int search(const int ply, int depth, int alpha, int beta) {
               }
             }
           }
-          tt_put(pos, TT_BETA, depth, put_adjusted_score(ply, best_score), best_move);
+          if (!excluded)
+            tt_put(pos, TT_BETA, depth, put_adjusted_score(ply, best_score), best_move);
           return score;
         }
       }
@@ -249,7 +286,8 @@ int search(const int ply, int depth, int alpha, int beta) {
     return in_check ? (-MATE + ply) : 0; 
   }
 
-  tt_put(pos, (alpha > orig_alpha) ? TT_EXACT : TT_ALPHA, depth, put_adjusted_score(ply, best_score), best_move);
+  if (!excluded)
+    tt_put(pos, (alpha > orig_alpha) ? TT_EXACT : TT_ALPHA, depth, put_adjusted_score(ply, best_score), best_move);
 
   return best_score;
 

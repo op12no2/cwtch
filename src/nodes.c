@@ -10,6 +10,7 @@ void clear_nodes(void) {
 
     node->killer = 0;
     node->cont_entry = NULL;
+    node->excluded_move = 0;
 
   }  
 

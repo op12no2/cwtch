@@ -103,7 +103,7 @@ else {
 ## nets
 
 - The compiled binary embeds the net via `INCBIN` in `net.c`. The path is hardwired in `types.h` as `NET_WEIGHTS_PATH`; to build against a different net, edit that line.
-- Config: `NET_H1_SIZE`, `NET_QA`, `NET_QB`, `NET_SCALE` in `types.h`. Current hidden layer is 1024.
+- Config: `NET_H1_SIZE`, `NET_QA`, `NET_QB`, `NET_SCALE` in `types.h`. Current hidden layer is 512.
 
 ### net architecture
 
@@ -111,7 +111,7 @@ Perspective network with two accumulators (one per side). Weights are pre-flippe
 
 ### key files
 - `net.h/c` - Weight loading, eval, and incremental update functions.
-- `nodes.h` - Node struct contains `accs[2][NET_H1_SIZE]` (1024 int16 elements each) plus `net_deferred` (pending op) and `accs_dirty` flag.
+- `nodes.h` - Node struct contains `accs[2][NET_H1_SIZE]` (512 int16 elements each) plus `net_deferred` (pending op) and `accs_dirty` flag.
 - `makemove.c` - Records the deferred net op for each move type.
 - `search.c` / `qsearch.c` - Call `lazy_update_accs()` just before needing the eval.
 

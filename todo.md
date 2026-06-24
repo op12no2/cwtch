@@ -6,9 +6,7 @@
 - output buckets
 - intput buckets
 - corrhist(s)
-- conthist
 - capthist 
-- singular extensions
 - probcut
 - tablebases support
 - dfrc support
@@ -43,7 +41,6 @@
 - spsa tune
 - lmp - tell move iterator rather then cycle
 - try R = 0.75 + ln(depth) * ln(moves_played) / 2.25
-- board is currently undefined on time up - sprt fixing that
 - pruning - set skip_quiets or something
 - lmr - allow jump into qs
 - pruning - alpha > -MATEISH is enough to stop the draw condition firing so no need for && played?
