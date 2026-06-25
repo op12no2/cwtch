@@ -36,6 +36,7 @@ typedef struct {
   int in_check;
   move_t tt_move;
   move_t excluded_move;  // tt-move excluded during a singular verification search
+  int dextensions;       // double extensions on the path to here (SE chain limiter)
   int stage;
   move_t killer;
   int16_t (*cont_entry)[64];  // cont_hist sub-table for the move that led here; NULL at root / after null

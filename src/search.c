@@ -58,6 +58,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   const int is_root = ply == 0;
   const int is_pv = is_root || (beta - alpha != 1);
   const move_t excluded = node->excluded_move;
+  node->dextensions = is_root ? 0 : nodes[ply-1].dextensions;
 
   if (depth <= 0 && in_check == 0) {
     return qsearch(ply, alpha, beta);
@@ -180,8 +181,11 @@ int search(const int ply, int depth, int alpha, int beta) {
       if (tc->finished)
         return 0;
 
-      if (s_score < s_beta)       // no other move reaches s_beta -> tt-move is singular
+      if (s_score < s_beta) {     // no other move reaches s_beta -> tt-move is singular
         extension = 1;
+        if (!is_pv && s_score < s_beta - 16 && node->dextensions <= 6)
+          extension = 2;          // overwhelmingly singular -> double extend
+      }
       else if (s_beta >= beta)    // verification already fails high -> multicut
         return s_beta;
       else if (tt_score >= beta)  // not singular and likely fails high -> search less
@@ -204,6 +208,9 @@ int search(const int ply, int depth, int alpha, int beta) {
     node->played[played++] = move;
 
     const int new_depth = depth - 1 + extension;
+
+    if (extension == 2)
+      node->dextensions++;  // tt-move's subtree inherits the incremented path count
 
     if (is_pv) {
       if (played == 1) { // pv move 1
@@ -242,6 +249,9 @@ int search(const int ply, int depth, int alpha, int beta) {
         score = -search(ply+1, new_depth, -beta, -alpha);
       }
     }
+
+    if (extension == 2)
+      node->dextensions--;  // restore for sibling moves
 
     if (tc->finished)
       return 0;
