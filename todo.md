@@ -44,5 +44,6 @@
 - pruning - set skip_quiets or something
 - lmr - allow jump into qs
 - pruning - alpha > -MATEISH is enough to stop the draw condition firing so no need for && played?
-- history try + from, to.
-
+- history try + from, to and average
+- SE triple extensions
+- split lmr into pv node and not

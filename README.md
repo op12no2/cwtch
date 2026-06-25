@@ -26,6 +26,10 @@ Commands can be given on the command line, for example: ```./cwtch ucinewgame "p
 
 You'll need the relevant net. Email me ```op12no2@gmail.com the``` the value of ```NET_WEIGHTS_PATH``` in ```src/types.h``` and I'll send it to you. Then just update that line as needed and ```make release``` or ```make release-win``` to create binaries in ```./releases```.
 
+## Cwtch's Net
+
+Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd``, then iteratively improved through several generations of self play and training; initially using a diy trainer and more recently with bullet. Currently it's a quantised 768->(512*2)->1 squared ReLU architecture, trained on about 2B positions; see ```bullet.rs```. 
+
 ## References & acknowledgements
 
 - https://www.chessprogramming.org/Main_Page - Chess programming wiki
