@@ -28,7 +28,7 @@ You'll need the relevant net. Email me ```op12no2@gmail.com the``` the value of 
 
 ## Cwtch's Net
 
-Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd``, then iteratively improved through several generations of self play and training; initially using a diy trainer and more recently with bullet. Currently it's a quantised 768->(512*2)->1 squared ReLU architecture, trained on about 2B positions; see ```bullet.rs```. 
+Cwtch's net was booted from ```quiet_labeled.epd``` and ```lichess-big3-resolved.epd```, then iteratively improved through several generations of self play and training; initially using a diy trainer and more recently with bullet. Currently it's a quantised 768->(512*2)->1 squared ReLU architecture, trained on about 2B positions; see ```bullet.rs```. 
 
 ## References & acknowledgements
 
