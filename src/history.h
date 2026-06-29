@@ -11,18 +11,24 @@
 #define KILLER 32767
 
 extern int16_t piece_to_history[12][64];
-extern int16_t cont_hist[12][64][12][64];  // [prev piece][prev to][piece][to]
+extern int16_t cont_history[12][64][12][64];  // [prev piece][prev to][piece][to]
+extern int16_t capture_history[12][64][6];  // [piece][to][captured type] (ep/promo capture -> pawn)
 
 inline void clear_piece_to_history(void) {
   memset(piece_to_history, 0, sizeof(piece_to_history));
 }
 
 inline void clear_cont_history(void) {
-  memset(cont_hist, 0, sizeof(cont_hist));
+  memset(cont_history, 0, sizeof(cont_history));
+}
+
+inline void clear_capture_history(void) {
+  memset(capture_history, 0, sizeof(capture_history));
 }
 
 void update_piece_to_history(const Position *pos, const move_t move, int bonus);
 void update_cont_history(Node *node, const Position *pos, const move_t move, int bonus);
+void update_capture_history(const Position *pos, const move_t move, int bonus);
 void update_killer(Node *node, const move_t move);
 
 #endif

@@ -212,7 +212,11 @@ void play_move(Node *node, char *uci_move) {
     format_move(move, buf);
     if (!strcmp(uci_move, buf)) {
       make_move(node, move);
-      update_accs(node);
+      // in-place advance of the root accs: copy current state to a scratch
+      // source so update_accs() reads/writes non-aliasing buffers (rare path)
+      int16_t scratch[2][NET_H1_SIZE];
+      memcpy(scratch, node->accs, sizeof scratch);
+      update_accs(node, scratch);
       return;
     }
   }

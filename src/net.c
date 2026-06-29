@@ -122,32 +122,33 @@ void lazy_update_accs(Node *node) {
   if (!node->accs_dirty)
     return;
 
-  memcpy(node->accs, (node - 1)->accs, sizeof(node->accs));
-  update_accs(node);
+  // fused copy+update: each updater writes child = parent + delta in one pass,
+  // avoiding a separate 2 KiB memcpy of the parent accs into the child.
+  update_accs(node, (node - 1)->accs);
   node->accs_dirty = 0;
 
 }
 
-void update_accs(Node *node) {
+void update_accs(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   switch (node->net_deferred.type) {
     case NET_OP_MOVE:
-      net_move(node);
+      net_move(node, src);
       break;
     case NET_OP_CAPTURE:
-      net_capture(node);
+      net_capture(node, src);
       break;
     case NET_OP_EP_CAPTURE:
-      net_ep_capture(node);
+      net_ep_capture(node, src);
       break;
     case NET_OP_CASTLE:
-      net_castle(node);
+      net_castle(node, src);
       break;
     case NET_OP_PROMO_PUSH:
-      net_promo_push(node);
+      net_promo_push(node, src);
       break;
     case NET_OP_PROMO_CAPTURE:
-      net_promo_capture(node);
+      net_promo_capture(node, src);
       break;
   }
 
@@ -205,10 +206,12 @@ int net_eval(Node *node) {
 
 }
 
-void net_move(Node *node) {
+void net_move(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   const uint8_t *const a = node->net_deferred.args;
 
+  const int16_t *const restrict s1 = src[0];
+  const int16_t *const restrict s2 = src[1];
   int16_t *const restrict a1 = node->accs[0];
   int16_t *const restrict a2 = node->accs[1];
 
@@ -222,16 +225,18 @@ void net_move(Node *node) {
   const int16_t *const restrict w2_b2 = &net_h2_w[b2];
 
   for (int i=0; i < NET_H1_SIZE; i++) {
-    a1[i] += w1_b2[i] - w1_b1[i];
-    a2[i] += w2_b2[i] - w2_b1[i];
+    a1[i] = s1[i] + w1_b2[i] - w1_b1[i];
+    a2[i] = s2[i] + w2_b2[i] - w2_b1[i];
   }
 
 }
 
-void net_capture(Node *node) {
+void net_capture(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   const uint8_t *const a = node->net_deferred.args;
 
+  const int16_t *const restrict s1 = src[0];
+  const int16_t *const restrict s2 = src[1];
   int16_t *const restrict a1 = node->accs[0];
   int16_t *const restrict a2 = node->accs[1];
 
@@ -248,16 +253,18 @@ void net_capture(Node *node) {
   const int16_t *const restrict w2_b3 = &net_h2_w[b3];
 
   for (int i=0; i < NET_H1_SIZE; i++) {  // autovec cap
-    a1[i] += w1_b3[i] - w1_b2[i] - w1_b1[i];
-    a2[i] += w2_b3[i] - w2_b2[i] - w2_b1[i];
+    a1[i] = s1[i] + w1_b3[i] - w1_b2[i] - w1_b1[i];
+    a2[i] = s2[i] + w2_b3[i] - w2_b2[i] - w2_b1[i];
   }
 
 }
 
-void net_ep_capture(Node *node) {
+void net_ep_capture(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   const uint8_t *const a = node->net_deferred.args;
 
+  const int16_t *const restrict s1 = src[0];
+  const int16_t *const restrict s2 = src[1];
   int16_t *const restrict a1 = node->accs[0];
   int16_t *const restrict a2 = node->accs[1];
 
@@ -274,16 +281,18 @@ void net_ep_capture(Node *node) {
   const int16_t *const restrict w2_b3 = &net_h2_w[b3];
 
   for (int i=0; i < NET_H1_SIZE; i++) {  // autovec ep
-    a1[i] += w1_b2[i] - w1_b1[i] - w1_b3[i];
-    a2[i] += w2_b2[i] - w2_b1[i] - w2_b3[i];
+    a1[i] = s1[i] + w1_b2[i] - w1_b1[i] - w1_b3[i];
+    a2[i] = s2[i] + w2_b2[i] - w2_b1[i] - w2_b3[i];
   }
 
 }
 
-void net_castle(Node *node) {
+void net_castle(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   const uint8_t *const a = node->net_deferred.args;
 
+  const int16_t *const restrict s1 = src[0];
+  const int16_t *const restrict s2 = src[1];
   int16_t *const restrict a1 = node->accs[0];
   int16_t *const restrict a2 = node->accs[1];
 
@@ -303,16 +312,18 @@ void net_castle(Node *node) {
   const int16_t *const restrict w2_b4 = &net_h2_w[b4];
 
   for (int i=0; i < NET_H1_SIZE; i++) {  // autovec_castle
-    a1[i] += w1_b2[i] - w1_b1[i] + w1_b4[i] - w1_b3[i];
-    a2[i] += w2_b2[i] - w2_b1[i] + w2_b4[i] - w2_b3[i];
+    a1[i] = s1[i] + w1_b2[i] - w1_b1[i] + w1_b4[i] - w1_b3[i];
+    a2[i] = s2[i] + w2_b2[i] - w2_b1[i] + w2_b4[i] - w2_b3[i];
   }
 
 }
 
-void net_promo_push(Node *node) {
+void net_promo_push(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   const uint8_t *const a = node->net_deferred.args;
 
+  const int16_t *const restrict s1 = src[0];
+  const int16_t *const restrict s2 = src[1];
   int16_t *const restrict a1 = node->accs[0];
   int16_t *const restrict a2 = node->accs[1];
 
@@ -326,16 +337,18 @@ void net_promo_push(Node *node) {
   const int16_t *const restrict w2_b2 = &net_h2_w[b2];
 
   for (int i=0; i < NET_H1_SIZE; i++) {  // autovec promo push
-    a1[i] += w1_b2[i] - w1_b1[i];
-    a2[i] += w2_b2[i] - w2_b1[i];
+    a1[i] = s1[i] + w1_b2[i] - w1_b1[i];
+    a2[i] = s2[i] + w2_b2[i] - w2_b1[i];
   }
 
 }
 
-void net_promo_capture(Node *node) {
+void net_promo_capture(Node *node, const int16_t (*src)[NET_H1_SIZE]) {
 
   const uint8_t *const a = node->net_deferred.args;
 
+  const int16_t *const restrict s1 = src[0];
+  const int16_t *const restrict s2 = src[1];
   int16_t *const restrict a1 = node->accs[0];
   int16_t *const restrict a2 = node->accs[1];
 
@@ -352,8 +365,8 @@ void net_promo_capture(Node *node) {
   const int16_t *const restrict w2_b3 = &net_h2_w[b3];
 
   for (int i=0; i < NET_H1_SIZE; i++) {  // autovec promo cap
-    a1[i] += w1_b2[i] - w1_b1[i] - w1_b3[i];
-    a2[i] += w2_b2[i] - w2_b1[i] - w2_b3[i];
+    a1[i] = s1[i] + w1_b2[i] - w1_b1[i] - w1_b3[i];
+    a2[i] = s2[i] + w2_b2[i] - w2_b1[i] - w2_b3[i];
   }
 
 }

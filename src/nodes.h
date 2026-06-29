@@ -24,14 +24,14 @@ typedef struct {
 
 typedef struct {
 
-  int16_t accs[2][NET_H1_SIZE];
+  _Alignas(64) int16_t accs[2][NET_H1_SIZE];  // 64B-aligned: vector loads never split a cache line
   Position pos;
   NetDeferred net_deferred;
   uint8_t accs_dirty;
   move_t moves[MAX_MOVES];
   move_t played[MAX_MOVES];
   int num_moves;
-  int16_t ranks[MAX_MOVES];
+  int32_t ranks[MAX_MOVES];
   int next_move;
   int in_check;
   move_t tt_move;
@@ -39,7 +39,7 @@ typedef struct {
   int dextensions;       // double extensions on the path to here (SE chain limiter)
   int stage;
   move_t killer;
-  int16_t (*cont_entry)[64];  // cont_hist sub-table for the move that led here; NULL at root / after null
+  int16_t (*cont_entry)[64];  // cont_history sub-table for the move that led here; NULL at root / after null
 
 } Node;
 

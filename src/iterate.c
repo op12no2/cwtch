@@ -30,10 +30,10 @@ static move_t get_next_sorted_move(Node *const node) {
 
   move_t max_m  = 0;
   move_t *moves = node->moves;
-  int16_t *ranks = node->ranks;
+  int32_t *ranks = node->ranks;
   const int next = node->next_move;
   const int num = node->num_moves;
-  int16_t max_r = INT16_MIN;
+  int32_t max_r = INT32_MIN;
   int max_i;
 
   for (int i=next; i < num; i++) {
@@ -59,7 +59,7 @@ static void rank_quiets(Node *node) {
   const uint8_t *board = node->pos.board;
   const move_t *moves = node->moves;
   const move_t killer = node->killer;
-  int16_t *ranks = node->ranks;
+  int32_t *ranks = node->ranks;
   int16_t (*const cont)[64] = node->cont_entry;
   const int n = node->num_moves;
 
@@ -85,11 +85,15 @@ static void rank_quiets(Node *node) {
   }
 }
 
+// coarse MVV term per captured/promoted piece type; capture history refines
+// within it (scaled ~2x Ethereal's, since cwtch's MAX_HISTORY is ~2x its divisor)
+static const int32_t mvv_augment[6] = {0, 4800, 4800, 9600, 19200, 0};  // P,N,B,R,Q,-
+
 static void rank_noisy(Node *node) {
 
   const uint8_t *board = node->pos.board;
   const move_t *moves = node->moves;
-  int16_t *ranks = node->ranks;
+  int32_t *ranks = node->ranks;
   const int n = node->num_moves;
 
   for (int i=0; i < n; i++) {
@@ -100,22 +104,19 @@ static void rank_noisy(Node *node) {
 
     if (m & MOVE_FLAG_CAPTURE) {
 
-      const int attacker = board[from] % 6;
+      const int piece = board[from];
       int victim = board[to];
+      victim = (victim == EMPTY) ? PAWN : victim % 6;  // ep -> pawn
 
-      if (victim == EMPTY)  // ep
-        victim = 0;
-      else
-        victim %= 6;
-
-      ranks[i] = (victim << 3) | (5 - attacker);
+      // mvv (major) + lva tiebreak (minor) + capture history (dominant once warm)
+      ranks[i] = 64000 + mvv_augment[victim] + (5 - piece % 6) + capture_history[piece][to][victim];
 
     }
     else {
 
-      // non-capture promotion
+      // non-capture promotion (promo_piece is KNIGHT..QUEEN)
       const int promo_piece = (m >> 12) & 0x7;
-      ranks[i] = (promo_piece << 3) | 5;
+      ranks[i] = 64000 + mvv_augment[promo_piece];
 
     }
 

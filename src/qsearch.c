@@ -84,6 +84,7 @@ int qsearch(const int ply, int alpha, const int beta) {
 
     pos_copy(pos, next_pos);
     make_move(next_node, move);
+    tt_prefetch(next_pos->hash);
     if (is_attacked(next_pos, bsf(*next_stm_king_ptr), opp))
       continue;
 

@@ -120,6 +120,7 @@ int search(const int ply, int depth, int alpha, int beta) {
   
     pos_copy(pos, next_pos);
     make_null_move(next_pos);
+    tt_prefetch(next_pos->hash);
     memcpy(next_node->accs, node->accs, sizeof(node->accs));
     next_node->accs_dirty = 0;
     next_node->cont_entry = NULL;
@@ -199,11 +200,12 @@ int search(const int ply, int depth, int alpha, int beta) {
 
     pos_copy(pos, next_pos);
     make_move(next_node, move);
+    tt_prefetch(next_pos->hash);
     if (is_attacked(next_pos, bsf(*next_stm_king_ptr), opp))
       continue;
 
     next_node->accs_dirty = 1;
-    next_node->cont_entry = cont_hist[moved_piece][to];
+    next_node->cont_entry = cont_history[moved_piece][to];
 
     node->played[played++] = move;
 
@@ -269,11 +271,17 @@ int search(const int ply, int depth, int alpha, int beta) {
           collect_pv(ply, best_move);
         }
         if (score >= beta) {
+          int bonus = 16 * depth * depth;
+          if (bonus > 2048)
+            bonus = 2048;
+          // capture history: reward the cutoff capture, penalise other tried captures
+          for (int i=0; i < played; i++) {
+            const move_t pm = node->played[i];
+            if (pm & MOVE_FLAG_CAPTURE)
+              update_capture_history(pos, pm, pm == best_move ? bonus : -bonus);
+          }
           if (!(best_move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))) {
             update_killer(node, best_move);
-            int bonus = 16 * depth * depth;
-            if (bonus > 2048)
-              bonus = 2048;
             update_piece_to_history(pos, best_move, bonus);
             update_cont_history(node, pos, best_move, bonus);
             for (int i=0; i < played-1; i++) {

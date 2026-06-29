@@ -8,7 +8,8 @@
 #include "nodes.h"
 
 int16_t piece_to_history[12][64];
-int16_t cont_hist[12][64][12][64];
+int16_t cont_history[12][64][12][64];
+int16_t capture_history[12][64][6];
 
 void update_piece_to_history(const Position *pos, const move_t move, int bonus) {
 
@@ -33,6 +34,20 @@ void update_cont_history(Node *node, const Position *pos, const move_t move, int
   const int to = move & 0x3F;
   const int piece = pos->board[from];
   int16_t *entry = &cont[piece][to];
+
+  // gravity self-bounds to +/-MAX_HISTORY (holds while |bonus| <= MAX_HISTORY)
+  *entry += bonus - *entry * abs(bonus) / MAX_HISTORY;
+
+}
+
+void update_capture_history(const Position *pos, const move_t move, int bonus) {
+
+  const int from = (move >> 6) & 0x3F;
+  const int to = move & 0x3F;
+  const int piece = pos->board[from];
+  int victim = pos->board[to];
+  victim = (victim == EMPTY) ? PAWN : victim % 6;  // ep / promo capture keyed by captured pawn
+  int16_t *entry = &capture_history[piece][to][victim];
 
   // gravity self-bounds to +/-MAX_HISTORY (holds while |bonus| <= MAX_HISTORY)
   *entry += bonus - *entry * abs(bonus) / MAX_HISTORY;

@@ -26,6 +26,7 @@ void tt_clear(void);
 int is_tt_null();
 void new_game(void);
 TT *tt_get(const Position *pos);
+void tt_prefetch(const uint64_t hash);
 void tt_put(const Position *pos, const int flags, const int depth, const int score, const move_t move);
 int get_adjusted_score(const int ply, const int score);
 int put_adjusted_score(const int ply, const int score);

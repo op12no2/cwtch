@@ -89,6 +89,12 @@ void tt_put(const Position *pos, const int flags, const int depth, const int sco
 
 }
 
+void tt_prefetch(const uint64_t hash) {
+
+  __builtin_prefetch(&tt[hash & tt_mask]);
+
+}
+
 TT *tt_get(const Position *pos) {
 
   const size_t idx = pos->hash & tt_mask;
@@ -112,6 +118,7 @@ void new_game(void) {
   tt_clear();
   clear_piece_to_history();
   clear_cont_history();
+  clear_capture_history();
 
 }
 
