@@ -1,2 +1,3 @@
-# cwtch
-A UCI chess engine written in C
+# Cwtch
+
+Retired.
