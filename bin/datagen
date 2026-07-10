@@ -1,0 +1,47 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "kill" ]; then
+  PIDS=$(pgrep -f "cwtch datagen" 2>/dev/null || true)
+  if [ -z "$PIDS" ]; then
+    echo "no datagen processes found"
+  else
+    echo "$PIDS" | xargs kill
+    echo "killed $(echo "$PIDS" | wc -l) datagen processes"
+  fi
+  exit 0
+fi
+
+if [ "$#" -ne 3 ]; then
+  echo "usage: datagen <directory> <positions> <threads>"
+  echo "       <positions> is the total across all threads (accepts e.g. 1e9)"
+  echo "       datagen kill"
+  exit 1
+fi
+
+DIR="$1"
+POSITIONS="$2"
+THREADS="$3"
+
+# split the total target evenly across threads (integer, accepts 1e9 etc)
+PER_THREAD=$(awk "BEGIN{printf \"%d\", $POSITIONS / $THREADS}")
+
+mkdir -p "$DIR"
+
+if [ "$(ls -A "$DIR" 2>/dev/null)" ]; then
+  echo "warning: $DIR is not empty"
+  read -p "continue? [y/N] " answer
+  if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
+    echo "aborted"
+    exit 1
+  fi
+fi
+
+for i in $(seq 1 "$THREADS"); do
+  sleep $(awk "BEGIN{printf \"%.2f\", rand() * 3}" <<< "$RANDOM")
+  ./cwtch "datagen $DIR $PER_THREAD" &
+done
+
+echo "launched $THREADS datagen processes, $PER_THREAD positions each (~$POSITIONS total) writing to $DIR"
+wait
+echo "all datagen processes complete"

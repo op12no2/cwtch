@@ -1,0 +1,15 @@
+#!/bin/bash
+# build committed HEAD in a temp worktree and install as releases/cwtch
+# working tree is untouched; run from repo root after committing
+
+set -e
+
+tmp=$(mktemp -d)
+git worktree add --detach "$tmp" HEAD > /dev/null
+make -C "$tmp" > /dev/null
+cp "$tmp/cwtch" releases/cwtch
+git worktree remove --force "$tmp"
+
+echo "releases/cwtch <- $(git rev-parse --short HEAD) $(git log -1 --pretty=%s)"
+./releases/cwtch uci n
+./releases/cwtch bench | grep ^nodes

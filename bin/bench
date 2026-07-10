@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+if [ "$#" -gt 1 ]; then
+  echo "usage: bench [depth]"
+  exit 1
+fi
+
+./cwtch "bench $1"
+./releases/cwtch "bench $1"
