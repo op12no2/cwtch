@@ -94,6 +94,8 @@ void position(Node *node, const char *board_fen, const char *stm_str, const char
   pos->hash = rebuild_hash(pos);
   net_slow_rebuild_accs(node);
   node->accs_dirty = 0;
+  node->prev_piece = EMPTY; /* Root has no previous move */
+  node->prev_to = 0;
 
   // initialize hh with starting position
   hh_reset();

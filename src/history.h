@@ -26,6 +26,11 @@ inline void clear_capture_history(void) {
   memset(capture_history, 0, sizeof(capture_history));
 }
 
+extern move_t counter_moves[12][64];
+inline void clear_counter_moves(void) {
+  memset(counter_moves, 0, sizeof(counter_moves));
+}
+
 void update_piece_to_history(const Position *pos, const move_t move, int bonus);
 void update_cont_history(Node *node, const Position *pos, const move_t move, int bonus);
 void update_capture_history(const Position *pos, const move_t move, int bonus);

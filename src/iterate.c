@@ -6,6 +6,8 @@
 #include "movegen.h"
 #include "history.h"
 
+#define COUNTERMOVE 32766
+
 static void remove_tt_move(Node *node) {
 
   const move_t tt_move = node->tt_move;
@@ -63,6 +65,11 @@ static void rank_quiets(Node *node) {
   int16_t (*const cont)[64] = node->cont_entry;
   const int n = node->num_moves;
 
+  move_t countermove = 0;
+  if (node->prev_piece != EMPTY) {
+    countermove = counter_moves[node->prev_piece][node->prev_to];
+  }
+
   for (int i=0; i < n; i++) {
 
     const move_t m = moves[i];
@@ -70,7 +77,9 @@ static void rank_quiets(Node *node) {
     if (m == killer) {
       ranks[i] = KILLER;
     }
-
+    else if (m == countermove && countermove != 0) {
+      ranks[i] = COUNTERMOVE;
+    }
     else {
 
       const int from = (m >> 6) & 0x3F;

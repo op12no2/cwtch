@@ -42,6 +42,10 @@ typedef struct {
   move_t killer;
   int16_t (*cont_entry)[64];  // NULL at root and after null move
 
+  /* Countermove tracking tracking fields */
+  int prev_piece;
+  int prev_to;
+
 } Node;
 
 extern Node nodes[MAX_PLY];

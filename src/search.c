@@ -37,14 +37,11 @@ int search(const int ply, int depth, int alpha, int beta) {
   pv_len[ply] = 0;
   const Position *pos = &node->pos;
 
-  //debug_verify(1, node, ply);
-
   if (ply >= MAX_PLY-1) {
     lazy_update_accs(node);
     return net_eval(node);
   }
 
-  // store hash for repetition detection (ply 0 already in hh from position())
   if (ply > 0) {
     hh_store(ply, pos->hash);
     if (is_draw(ply, pos->hash, pos->hmc) || is_mat_draw(pos)) {
@@ -75,7 +72,6 @@ int search(const int ply, int depth, int alpha, int beta) {
       return 0;
   }
 
-  // mate distance pruning 
   if (alpha < -MATE + ply)
     alpha = -MATE + ply;
   if (beta > MATE - ply - 1)
@@ -92,13 +88,11 @@ int search(const int ply, int depth, int alpha, int beta) {
     }
   }
 
-  // capture tt fields before nmp overwrites the entry
   const move_t tt_move = entry ? entry->move : 0;
   const int tt_depth = entry ? entry->depth : 0;
   const int tt_flags = entry ? entry->flags : 0;
   const int tt_score = entry ? get_adjusted_score(ply, entry->score) : 0;
 
-  //iir
   if (!in_check && !excluded && depth >= 4 && (!tt_move || (entry && entry->depth + 4 < depth))) {
     depth--;
   }
@@ -107,10 +101,8 @@ int search(const int ply, int depth, int alpha, int beta) {
   const int16_t ev = correct_eval(pos, net_eval(node));
   node->ev = ev;
 
-  // improving
   const int improving = !in_check && (ply < 2 || ev > nodes[ply-2].ev);
 
-  // beta pruning
   if (!is_pv && !excluded && !in_check && depth <= 8 && ev >= beta + (98 * (depth - improving))) {
     return ev;
   }
@@ -118,7 +110,6 @@ int search(const int ply, int depth, int alpha, int beta) {
   Node *next_node = &nodes[ply + 1];
   Position *next_pos = &next_node->pos;
 
-  // null move pruning
   if (!is_pv && !excluded && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(pos)) {
   
     const int nmp_depth = depth - 4;
@@ -129,6 +120,10 @@ int search(const int ply, int depth, int alpha, int beta) {
     memcpy(next_node->accs, node->accs, sizeof(node->accs));
     next_node->accs_dirty = 0;
     next_node->cont_entry = NULL;
+    
+    // Clear history tracking for null moves
+    next_node->prev_piece = EMPTY;
+    next_node->prev_to = 0;
 
     const int score = -search(ply+1, nmp_depth, -beta, -beta+1);
   
@@ -157,19 +152,15 @@ int search(const int ply, int depth, int alpha, int beta) {
 
     const int is_quiet = !(move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE));
 
-    // lmp
     if (is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 2 && played > (6 * depth))
       continue;
 
-    // futility
     if (is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 4 && played && (ev + depth * 129) < alpha)
       continue;
 
-    // see pruning
     if (!is_quiet && !is_pv && !in_check && alpha > -MATEISH && depth <= 2 && played && !see_ge(pos, move, 0))
       continue;
 
-    // singular extensions
     int extension = 0;
     if (!is_root && !excluded && depth >= 8 && move == tt_move && tt_depth + 4 >= depth && tt_flags != TT_ALPHA && tt_score > -MATEISH && tt_score < MATEISH) {
 
@@ -179,20 +170,20 @@ int search(const int ply, int depth, int alpha, int beta) {
       node->excluded_move = tt_move;
       const int s_score = search(ply, s_depth, s_beta - 1, s_beta);
       node->excluded_move = 0;
-      node->stage = 1;          // tt-move already returned; gen noisy next
-      node->tt_move = tt_move;  // defensive
+      node->stage = 1;          
+      node->tt_move = tt_move;  
 
       if (tc->finished)
         return 0;
 
-      if (s_score < s_beta) {     // singular
+      if (s_score < s_beta) {     
         extension = 1;
         if (!is_pv && s_score < s_beta - 16 && node->dextensions <= 6)
-          extension = 2;          // double extend
+          extension = 2;          
       }
-      else if (s_beta >= beta)    // multicut
+      else if (s_beta >= beta)    
         return s_beta;
-      else if (tt_score >= beta)  // negative extension
+      else if (tt_score >= beta)  
         extension = -1;
     }
 
@@ -209,6 +200,10 @@ int search(const int ply, int depth, int alpha, int beta) {
 
     next_node->accs_dirty = 1;
     next_node->cont_entry = cont_history[moved_piece][to];
+    
+    // Assign previous move traits to the child ply
+    next_node->prev_piece = moved_piece;
+    next_node->prev_to = to;
 
     node->played[played++] = move;
 
@@ -218,10 +213,10 @@ int search(const int ply, int depth, int alpha, int beta) {
       node->dextensions++;
 
     if (is_pv) {
-      if (played == 1) { // pv move 1
+      if (played == 1) { 
         score = -search(ply+1, new_depth, -beta, -alpha);
       }
-      else { // pv move > 1
+      else { 
 
         int d = new_depth;
 
@@ -238,7 +233,7 @@ int search(const int ply, int depth, int alpha, int beta) {
         }
       }
     }
-    else { // not pv
+    else { 
 
       int d = new_depth;
 
@@ -256,7 +251,7 @@ int search(const int ply, int depth, int alpha, int beta) {
     }
 
     if (extension == 2)
-      node->dextensions--;  // restore for siblings
+      node->dextensions--;  
 
     if (tc->finished)
       return 0;
@@ -277,7 +272,7 @@ int search(const int ply, int depth, int alpha, int beta) {
           int bonus = 18 * depth * depth;
           if (bonus > 2020)
             bonus = 2020;
-          // capture history
+          
           for (int i=0; i < played; i++) {
             const move_t pm = node->played[i];
             if (pm & MOVE_FLAG_CAPTURE)
@@ -287,6 +282,12 @@ int search(const int ply, int depth, int alpha, int beta) {
             update_killer(node, best_move);
             update_piece_to_history(pos, best_move, bonus);
             update_cont_history(node, pos, best_move, bonus);
+            
+            // Update Countermove Table on cutoff
+            if (ply > 0 && node->prev_piece != EMPTY) {
+              counter_moves[node->prev_piece][node->prev_to] = best_move;
+            }
+
             for (int i=0; i < played-1; i++) {
               const move_t pm = node->played[i];
               if (!(pm & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE))) {
@@ -295,7 +296,7 @@ int search(const int ply, int depth, int alpha, int beta) {
               }
             }
           }
-          // corrhist
+          
           if (!excluded && !in_check && best_score < MATEISH && best_score > ev && !(best_move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE)))
             update_corrhist(pos, depth, best_score - ev);
           if (!excluded)
@@ -310,7 +311,6 @@ int search(const int ply, int depth, int alpha, int beta) {
     return in_check ? (-MATE + ply) : 0; 
   }
 
-  // corrhist
   if (!excluded && !in_check && best_score > -MATEISH && best_score < MATEISH && !(best_move & (MOVE_FLAG_CAPTURE | MOVE_FLAG_PROMOTE)) && !(alpha == orig_alpha && best_score >= ev))
     update_corrhist(pos, depth, best_score - ev);
 

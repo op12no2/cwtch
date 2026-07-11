@@ -10,6 +10,7 @@
 int16_t piece_to_history[12][64];
 int16_t cont_history[12][64][12][64];
 int16_t capture_history[12][64][6];
+move_t counter_moves[12][64];
 
 // gravity self-bounds to +/-MAX_HISTORY for |bonus| <= MAX_HISTORY
 static void apply_gravity(int16_t *entry, const int bonus) {

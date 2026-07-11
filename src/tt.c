@@ -121,6 +121,7 @@ void new_game(void) {
   clear_cont_history();
   clear_capture_history();
   clear_corrhist();
+  clear_counter_moves(); /* Reset countermoves for the new game */
 
 }
 
