@@ -211,10 +211,11 @@ static int play_game(FILE *fp) {
   pos_copy(&nodes[0].pos, &start_pos);
 
   // scored play
-  int draw_count = 0;
-  uint8_t wdl = VIRI_WDL_DRAW;
+    int wdl = VIRI_WDL_DRAW;
+    int draw_count = 0;
+    int adjudication_counter = 0; 
 
-  for (int ply = 0; ply < DG_MAX_GAME_MOVES; ply++) {
+    for (int ply = 0; ply < DG_MAX_GAME_MOVES; ply++) {
 
     Position *pos = &nodes[0].pos;
     const int stm = pos->stm;
@@ -251,17 +252,38 @@ static int play_game(FILE *fp) {
       num_entries++;
     }
 
-    // adjudication
+// adjudication (draws)
     if (abs(score) <= DG_DRAW_SCORE)
-      draw_count++;
+        draw_count++;
     else
-      draw_count = 0;
+        draw_count = 0;
 
     if (draw_count >= DG_DRAW_COUNT && ply >= DG_DRAW_PLY) {
-      wdl = VIRI_WDL_DRAW;
-      break;
+        wdl = VIRI_WDL_DRAW;
+        break;
     }
 
+    // adjudication (resignations)
+    // If one side is completely crushing the other (1500+ centipawns)
+    if (abs(score) > 1500) {
+        adjudication_counter++;
+
+        // If the massive lead holds for 3 consecutive half-moves
+        if (adjudication_counter >= 3) {
+            // Record the win/loss before breaking!
+            if (score > 0) {
+                // We are winning! The winner is whoever is currently moving.
+                wdl = (stm == WHITE) ? VIRI_WDL_WHITE_WIN : VIRI_WDL_BLACK_WIN;
+            } else {
+                // We are losing! The winner is the opponent.
+                wdl = (stm == WHITE) ? VIRI_WDL_BLACK_WIN : VIRI_WDL_WHITE_WIN;
+            }
+            break;
+        }
+    } else {
+        // Reset the counter if the score normalizes
+        adjudication_counter = 0;
+    }
     // play the move
     char buf[6];
     format_move(best, buf);

@@ -47,7 +47,7 @@ bool uci_exec(char *input) {
   if (str_eq(cmd, "uci", "")) {
     printf("id name %s %s\n", "Cwtch", BUILD);
     printf("id author Colin Jenkins & Basti Dangca\n");
-    printf("option name Hash type spin default %d min 1 max 1024\n", TT_DEFAULT_MB);
+    printf("option name Hash type spin default %d min 1 max 32768\n", TT_DEFAULT_MB);
     printf("option name LoadNet type string default\n");
     printf("uciok\n");
   }

@@ -26,7 +26,7 @@ else
   [ "$1" = "stc" ] && shift
 fi
 
-e1name="Cwtch_Countermove"
+e1name="Cwtch_Test"
 e2name="Cwtch_Base"
 
 ~/fastchess/fastchess -recover -concurrency $concurrency -rounds 10000 -repeat \

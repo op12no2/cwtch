@@ -16,8 +16,8 @@ int new_tt(size_t megabytes) {
   if (megabytes < 1)
     megabytes = 1;
 
-  if (megabytes > 1024)
-    megabytes = 1024;
+  if (megabytes > 32768)
+    megabytes = 32768;
 
   if (tt) {
     free(tt);

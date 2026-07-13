@@ -24,7 +24,7 @@ const DATA_FILES: &[&str] = &[
     "../datagen/gen6.vf",
     "../datagen/gen5.vf",
 ];
-const OUTPUT_DIR: &str = "/mnt/d/bulletnets/gen7d";
+const OUTPUT_DIR: &str = "nets";
 const HIDDEN_SIZE: usize = 512;
 const SB: usize = 600;
 const WDL_START: f32 = 0.4;
@@ -64,8 +64,8 @@ fn main() {
             // merge the factoriser into each bucket's weights
             SavedFormat::id("l0w")
                 .transform(|store, weights| {
-                    let factoriser = store.get("l0f").values.repeat(NUM_INPUT_BUCKETS);
-                    weights.into_iter().zip(factoriser).map(|(a, b)| a + b).collect()
+                    // bypassed
+                    weights
                 })
                 .round()
                 .quantise::<i16>(QA),
@@ -125,7 +125,7 @@ fn main() {
     };
 
     let settings = LocalSettings { threads: THREADS, test_set: None, output_directory: OUTPUT_DIR, batch_queue_size: 64 };
-    let data_loader = loader::ViriBinpackLoader::new_concat_multiple(DATA_FILES, BUFFER_MB, THREADS, filter);
+    let data_loader = loader::ViriBinpackLoader::new("/home/sebby/cwtch/data", BUFFER_MB, THREADS, filter);
 
     trainer.run(&schedule, &settings, &data_loader);
 

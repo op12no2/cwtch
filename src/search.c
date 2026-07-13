@@ -103,16 +103,32 @@ int search(const int ply, int depth, int alpha, int beta) {
 
   const int improving = !in_check && (ply < 2 || ev > nodes[ply-2].ev);
 
-  if (!is_pv && !excluded && !in_check && depth <= 8 && ev >= beta + (98 * (depth - improving))) {
+  if (!is_pv && !excluded && !in_check && depth <= 8 && ev >= beta + (75 * (depth - improving))) {
     return ev;
   }
+
+  // =========================================================
+  // PAWNOCCHIO IDEA #2: RAZORING
+  // If our evaluation is absolutely terrible, do a quick QSearch
+  // to prove the position is dead before wasting time on a full search.
+  // =========================================================
+  if (!is_pv && !excluded && !in_check && depth <= 3) {
+    int razor_margin = 300 + (depth * 100);
+    if (ev + razor_margin <= alpha) {
+      int razor_score = qsearch(ply, alpha, alpha + 1);
+      if (razor_score <= alpha) {
+        return razor_score;
+      }
+    }
+  }
+  // =========================================================
 
   Node *next_node = &nodes[ply + 1];
   Position *next_pos = &next_node->pos;
 
   if (!is_pv && !excluded && !in_check && depth > 2 && ev > beta && !is_pawn_endgame(pos)) {
   
-    const int nmp_depth = depth - 4;
+    const int nmp_depth = depth - 3 - depth / 6;
   
     pos_copy(pos, next_pos);
     make_null_move(next_pos);
@@ -221,8 +237,9 @@ int search(const int ply, int depth, int alpha, int beta) {
         int d = new_depth;
 
         if (depth >= 3 && played >= 3 && is_quiet && !in_check) {
-          d -= lmr[depth][played];
-          d += (hist > 0);
+          int reduction = lmr[depth][played];
+          reduction -= hist / 8000;
+          d -= reduction;
           d = (d < 1) ? 1 : d;
         }
 
@@ -238,8 +255,9 @@ int search(const int ply, int depth, int alpha, int beta) {
       int d = new_depth;
 
       if (depth >= 3 && played >= 2 && is_quiet && !in_check) {
-        d -= lmr[depth][played] + 1;
-        d += (hist > 0);
+        int reduction = lmr[depth][played] + 1;
+        reduction -= hist / 8000;
+        d -= reduction;
         d = (d < 1) ? 1 : d;
       }
 
@@ -269,9 +287,19 @@ int search(const int ply, int depth, int alpha, int beta) {
           collect_pv(ply, best_move);
         }
         if (score >= beta) {
-          int bonus = 18 * depth * depth;
+          
+          // =========================================================
+          // PAWNOCCHIO IDEA #1: STATSCORE HISTORY
+          // Scale the bonus dynamically based on how much the move 
+          // beat the static evaluation of the position!
+          // =========================================================
+          int stat_diff = score - ev;
+          if (stat_diff < 0) stat_diff = 0;
+          
+          int bonus = (18 * depth * depth) + (stat_diff * depth / 4);
           if (bonus > 2020)
             bonus = 2020;
+          // =========================================================
           
           for (int i=0; i < played; i++) {
             const move_t pm = node->played[i];
