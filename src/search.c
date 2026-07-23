@@ -20,6 +20,9 @@
 #include "debug.h"
 #include "pv.h"
 #include "see.h"
+#include <stdatomic.h>
+
+_Thread_local int search_local_node_batch = 0;
 
 static int lmr[MAX_PLY][MAX_MOVES];
 
@@ -65,12 +68,14 @@ int search(const int ply, int depth, int alpha, int beta) {
     depth = 0;
 
   TimeControl *tc = &time_control;
-  tc->nodes++;
-  if ((tc->nodes & 1023) == 0) {
-    check_tc();
-    if (tc->finished)
-      return 0;
-  }
+  search_local_node_batch++;
+
+if (search_local_node_batch >= 1024) {
+    atomic_fetch_add_explicit(&time_control.nodes, 1024, memory_order_relaxed);
+    search_local_node_batch = 0;
+    
+    check_tc_nodes(); // Or check_time() / whatever function Cwtch uses to check time limits
+}
 
   if (alpha < -MATE + ply)
     alpha = -MATE + ply;

@@ -15,6 +15,9 @@
 #include "see.h"
 #include "debug.h"
 #include "pv.h"
+#include <stdatomic.h>
+
+_Thread_local int qsearch_local_node_batch = 0;
 
 int qsearch(const int ply, int alpha, const int beta) {
 
@@ -48,12 +51,14 @@ int qsearch(const int ply, int alpha, const int beta) {
   }
 
   TimeControl *tc = &time_control;
-  tc->nodes++;
-  if ((tc->nodes & 1023) == 0) {
-    check_tc();
-    if (tc->finished)
-      return 0;
-  }
+  qsearch_local_node_batch++;
+
+if (qsearch_local_node_batch >= 1024) {
+    atomic_fetch_add_explicit(&time_control.nodes, 1024, memory_order_relaxed);
+    qsearch_local_node_batch = 0;
+    
+    check_tc_nodes(); // Or check_time() / whatever function Cwtch uses
+}
 
   const TT *entry = tt_get(pos);
   if (entry) {
