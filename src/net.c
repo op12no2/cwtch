@@ -43,7 +43,7 @@ typedef struct {
   uint64_t all[12];
 } FinnyEntry;
 
-static FinnyEntry finny[2][NET_I_BUCKETS][2];  // [perspective][bucket][mirror]
+static _Thread_local FinnyEntry finny[2][NET_I_BUCKETS][2];  // [perspective][bucket][mirror]
 
 // per-perspective view of the feature space
 typedef struct {
@@ -99,6 +99,17 @@ static inline int32_t screlu(const int32_t x) {
 static inline int32_t sqrelu(const int32_t x) {
   const int32_t y = x & ~(x >> 31);
   return y * y;
+}
+
+void net_init_thread(void) {
+  for (int p=0; p < 2; p++) {
+    for (int b=0; b < NET_I_BUCKETS; b++) {
+      for (int m=0; m < 2; m++) {
+        memcpy(finny[p][b][m].acc, net_h1_b, sizeof net_h1_b);
+        memset(finny[p][b][m].all, 0, sizeof finny[p][b][m].all);
+      }
+    }
+  }
 }
 
 static void unpack_weights(const int16_t *weights) {

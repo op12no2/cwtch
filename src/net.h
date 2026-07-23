@@ -9,6 +9,7 @@ int net_eval(Node *node);
 void net_slow_rebuild_accs(Node *node);
 void update_accs(Node *node, const int16_t (*src)[NET_H1_SIZE]);
 void lazy_update_accs(Node *node);
+void net_init_thread(void);
 
 inline int net_base(const int piece, const int sq) {
   return (((piece << 6) | sq) * NET_H1_SIZE);

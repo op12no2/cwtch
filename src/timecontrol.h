@@ -2,6 +2,7 @@
 #define TIMECONTROL_H
 
 #include <stdint.h>
+#include <stdatomic.h>
 #include "move.h"
 
 typedef struct {
@@ -11,10 +12,10 @@ typedef struct {
   int max_depth; // iterative deepening depth, MAX_PLY if infinite.
   uint64_t max_nodes;
   uint64_t hard_nodes;
-  volatile uint8_t finished;
-  uint64_t nodes;  // node count when searching
   move_t best_move;
   int best_score;
+  _Atomic uint64_t nodes;
+  _Atomic int finished;
 
 } TimeControl;
 

@@ -1,6 +1,6 @@
 
 # Version (used in release binary names)
-VERSION := 6.2
+VERSION := 6.3
 
 # Configurable paths
 SRC_DIR := src

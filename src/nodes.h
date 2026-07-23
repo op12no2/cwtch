@@ -48,7 +48,7 @@ typedef struct {
 
 } Node;
 
-extern Node nodes[MAX_PLY];
+extern _Thread_local Node nodes[MAX_PLY];
 
 void clear_nodes(void);
 

@@ -4,8 +4,8 @@
 #include <string.h>
 #include "nodes.h"
 
-extern move_t pv_table[MAX_PLY][MAX_PLY];
-extern int pv_len[MAX_PLY];
+extern _Thread_local move_t pv_table[MAX_PLY][MAX_PLY];
+extern _Thread_local int pv_len[MAX_PLY];
 
 inline void collect_pv(const int ply, const move_t move) {
 

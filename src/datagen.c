@@ -16,6 +16,7 @@
 #include "position.h"
 #include "iterate.h"
 #include "net.h"
+#include "uci.h"
 
 #define DG_RANDOM_PLIES   10
 #define DG_SEARCH_NODES   5000

@@ -1,6 +1,6 @@
 #include "nodes.h"
 
-Node nodes[MAX_PLY];
+_Thread_local Node nodes[MAX_PLY];
 
 void clear_nodes(void) {
 

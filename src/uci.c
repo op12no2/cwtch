@@ -20,6 +20,8 @@
 
 #define MAX_TOKENS 1024
 
+int num_threads = 1;
+
 static bool str_eq(const char *a, const char *b, const char *c) {
   return (strcmp(a, b) == 0) || (strcmp(a, c) == 0);
 }
@@ -48,6 +50,7 @@ bool uci_exec(char *input) {
     printf("id name %s %s\n", "Cwtch", BUILD);
     printf("id author Colin Jenkins & Basti Dangca\n");
     printf("option name Hash type spin default %d min 1 max 32768\n", TT_DEFAULT_MB);
+    printf("option name Threads type spin default 1 min 1 max 256\n");
     printf("option name LoadNet type string default\n");
     printf("uciok\n");
   }
@@ -65,6 +68,11 @@ bool uci_exec(char *input) {
     if (strcasecmp(tokens[2], "Hash") == 0) {
       int mb = atoi(tokens[4]);
       new_tt(mb);
+    }
+    else if (strcasecmp(tokens[2], "Threads") == 0) {
+      num_threads = atoi(tokens[4]);
+      if (num_threads < 1) num_threads = 1;
+      if (num_threads > 256) num_threads = 256; // Safeguard limit
     }
     else if (strcasecmp(tokens[2], "LoadNet") == 0) {
       if (ntokens >= 5) {
