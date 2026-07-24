@@ -21,6 +21,7 @@
 #define MAX_TOKENS 1024
 
 int num_threads = 1;
+int is_chess960 = 0;
 
 static bool str_eq(const char *a, const char *b, const char *c) {
   return (strcmp(a, b) == 0) || (strcmp(a, c) == 0);
@@ -51,6 +52,7 @@ bool uci_exec(char *input) {
     printf("id author Colin Jenkins & Basti Dangca\n");
     printf("option name Hash type spin default %d min 1 max 32768\n", TT_DEFAULT_MB);
     printf("option name Threads type spin default 1 min 1 max 256\n");
+    printf("option name UCI_Chess960 type check default false\n");
     printf("option name LoadNet type string default\n");
     printf("uciok\n");
   }
@@ -78,6 +80,9 @@ bool uci_exec(char *input) {
       if (ntokens >= 5) {
         load_weights_from_file(tokens[4]);
       }
+    }
+    else if (strcasecmp(tokens[2], "UCI_Chess960") == 0) {
+      is_chess960 = (strcasecmp(tokens[4], "true") == 0);
     }
   }
 

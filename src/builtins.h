@@ -15,4 +15,9 @@ static inline int bsf(const uint64_t bb) {
 
 }
 
+static inline int msb(const uint64_t bb) {
+  // 63 minus the number of leading zeros gives us the highest set bit
+  return 63 - __builtin_clzll(bb); 
+}
+
 #endif

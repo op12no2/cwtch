@@ -326,48 +326,90 @@ static void gen_castling(Node *node) {
   const int stm = pos->stm;
   const int opp = stm ^ 1;
   const uint8_t rights = pos->rights;
-  const uint64_t occupied = pos->occupied;
   move_t *m = node->moves + node->num_moves;
   int n = 0;
 
-  if (stm == WHITE) {
+  if (!rights) return;
 
-    if ((rights & WHITE_RIGHTS_KING) &&
-         !(occupied & 0x0000000000000060ULL) &&
-         !is_attacked(pos, F1, opp) &&
-         !is_attacked(pos, G1, opp)) {
-      m[n++] = encode_move(E1, G1, MOVE_FLAG_CASTLE);
+  const int rank_offset = stm == WHITE ? 0 : 56;
+  const int k_from = bsf(pos->all[piece_index(KING, stm)]);
+
+  // --- KINGSIDE CASTLING ---
+  if (rights & (stm == WHITE ? WHITE_RIGHTS_KING : BLACK_RIGHTS_KING)) {
+    const int r_from = pos->castling_rook_sq[stm][0];
+    const int k_to = G1 + rank_offset;
+    const int r_to = F1 + rank_offset;
+
+    int path_empty = 1;
+    
+    // Check King's path
+    int min_sq = (k_from < k_to) ? k_from : k_to;
+    int max_sq = (k_from > k_to) ? k_from : k_to;
+    for (int sq = min_sq; sq <= max_sq; sq++) {
+      if (sq != k_from && sq != r_from && pos->board[sq] != EMPTY) { path_empty = 0; break; }
+    }
+    
+    // Check Rook's path
+    min_sq = (r_from < r_to) ? r_from : r_to;
+    max_sq = (r_from > r_to) ? r_from : r_to;
+    for (int sq = min_sq; sq <= max_sq; sq++) {
+      if (sq != k_from && sq != r_from && pos->board[sq] != EMPTY) { path_empty = 0; break; }
     }
 
-    if ((rights & WHITE_RIGHTS_QUEEN) &&
-         !(occupied & 0x000000000000000EULL) &&
-         !is_attacked(pos, D1, opp) &&
-         !is_attacked(pos, C1, opp)) {
-      m[n++] = encode_move(E1, C1, MOVE_FLAG_CASTLE);
-    }
+    if (path_empty) {
+      int safe = 1;
+      int step = (k_to > k_from) ? 1 : (k_to < k_from ? -1 : 0);
+      
+      // King cannot be in check, pass through check, or land in check
+      if (step != 0) {
+        for (int sq = k_from; sq != k_to + step; sq += step) {
+          if (is_attacked(pos, sq, opp)) { safe = 0; break; }
+        }
+      } else {
+        if (is_attacked(pos, k_from, opp)) safe = 0;
+      }
 
+      if (safe) m[n++] = encode_move(k_from, r_from, MOVE_FLAG_CASTLE);
+    }
   }
 
-  else {
+  // --- QUEENSIDE CASTLING ---
+  if (rights & (stm == WHITE ? WHITE_RIGHTS_QUEEN : BLACK_RIGHTS_QUEEN)) {
+    const int r_from = pos->castling_rook_sq[stm][1];
+    const int k_to = C1 + rank_offset;
+    const int r_to = D1 + rank_offset;
 
-    if ((rights & BLACK_RIGHTS_KING) &&
-         !(occupied & 0x6000000000000000ULL) &&
-         !is_attacked(pos, F8, opp) &&
-         !is_attacked(pos, G8, opp)) {
-      m[n++] = encode_move(E8, G8, MOVE_FLAG_CASTLE);
+    int path_empty = 1;
+    
+    int min_sq = (k_from < k_to) ? k_from : k_to;
+    int max_sq = (k_from > k_to) ? k_from : k_to;
+    for (int sq = min_sq; sq <= max_sq; sq++) {
+      if (sq != k_from && sq != r_from && pos->board[sq] != EMPTY) { path_empty = 0; break; }
+    }
+    
+    min_sq = (r_from < r_to) ? r_from : r_to;
+    max_sq = (r_from > r_to) ? r_from : r_to;
+    for (int sq = min_sq; sq <= max_sq; sq++) {
+      if (sq != k_from && sq != r_from && pos->board[sq] != EMPTY) { path_empty = 0; break; }
     }
 
-    if ((rights & BLACK_RIGHTS_QUEEN) &&
-         !(occupied & 0x0E00000000000000ULL) &&
-         !is_attacked(pos, D8, opp) &&
-         !is_attacked(pos, C8, opp)) {
-      m[n++] = encode_move(E8, C8, MOVE_FLAG_CASTLE);
-    }
+    if (path_empty) {
+      int safe = 1;
+      int step = (k_to > k_from) ? 1 : (k_to < k_from ? -1 : 0);
+      
+      if (step != 0) {
+        for (int sq = k_from; sq != k_to + step; sq += step) {
+          if (is_attacked(pos, sq, opp)) { safe = 0; break; }
+        }
+      } else {
+         if (is_attacked(pos, k_from, opp)) safe = 0;
+      }
 
+      if (safe) m[n++] = encode_move(k_from, r_from, MOVE_FLAG_CASTLE);
+    }
   }
 
   node->num_moves += n;
-
 }
 
 void gen_noisy(Node *node) {

@@ -17,6 +17,7 @@ typedef struct {
   _Atomic uint64_t nodes;
   _Atomic int finished;
 
+
 } TimeControl;
 
 extern TimeControl time_control;

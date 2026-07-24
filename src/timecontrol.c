@@ -2,8 +2,10 @@
 #include "timecontrol.h"
 #include "move.h"
 #include "nodes.h"
+#include "input.h"
 
 TimeControl time_control;
+static volatile int input_lock = 0;
 
 void init_tc(int64_t wtime, int64_t winc, int64_t btime, int64_t binc, int64_t max_nodes, int64_t move_time, int max_depth, int moves_to_go) {
 
@@ -89,8 +91,37 @@ void check_tc(void) {
 void check_tc_nodes(void) {
 
   TimeControl *tc = &time_control;
+  
+  if (tc->finished)
+    return;
 
-  if (tc->max_nodes && tc->nodes >= tc->max_nodes)
+  // ========================================================
+  // THE FIX: Atomic Spinlock
+  // Only 1 thread gets inside this block at a time. The rest
+  // skip it and go straight back to searching at full speed!
+  if (__sync_lock_test_and_set(&input_lock, 1) == 0) {
+
+    // 1. Check time limit
+    if (tc->finish_time) {
+      if (time_ms() >= tc->finish_time) {
+        tc->finished = 1;
+      }
+    }
+
+    // 2. Check hard node limit
+    if (tc->hard_nodes) {
+      if (tc->nodes >= tc->hard_nodes) {
+        tc->finished = 1;
+      }
+    }
+
+    // Unlock so it can be checked again later
+    __sync_lock_release(&input_lock);
+  }
+  // ========================================================
+
+  // Fast check for maximum nodes (can stay outside the lock)
+  if (tc->max_nodes && tc->nodes >= tc->max_nodes) {
     tc->finished = 1;
-
+  }
 }

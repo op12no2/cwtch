@@ -97,5 +97,7 @@ void go(int silent) {
     char bm_str[6];
     format_move(time_control.best_move, bm_str);
     printf("bestmove %s\n", bm_str);
+
+    fflush(stdout);
   }
 }

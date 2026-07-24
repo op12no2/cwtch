@@ -25,6 +25,9 @@ typedef struct {
   uint8_t ep;
   uint8_t hmc;
   uint64_t hash;
+  // New fields for Chess960
+  int is_chess960; 
+  uint8_t castling_rook_sq[2][2]; // [colour][kingside=0, queenside=1]
 
 } Position;
 

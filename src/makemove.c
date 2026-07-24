@@ -9,30 +9,6 @@
 
 #define MOVE_FLAGS_PROMOCAP (MOVE_FLAG_PROMOTE | MOVE_FLAG_CAPTURE) 
 
-// rook squares for castling indexed by king destination
-static const int rook_from[64] = {
-  [G1] = H1, [C1] = A1,
-  [G8] = H8, [C8] = A8,
-};
-
-static const int rook_to[64] = {
-  [G1] = F1, [C1] = D1,
-  [G8] = F8, [C8] = D8,
-};
-
-// AND with rights to update - 15 means no change
-static const uint8_t rights_mask[64] = {
-  13, 15, 15, 15, 12, 15, 15, 14,  // A1=13, E1=12, H1=14
-  15, 15, 15, 15, 15, 15, 15, 15,
-  15, 15, 15, 15, 15, 15, 15, 15,
-  15, 15, 15, 15, 15, 15, 15, 15,
-  15, 15, 15, 15, 15, 15, 15, 15,
-  15, 15, 15, 15, 15, 15, 15, 15,
-  15, 15, 15, 15, 15, 15, 15, 15,
-   7, 15, 15, 15,  3, 15, 15, 11,  // A8=7, E8=3, H8=11
-};
-
-
 void make_move(Node *node, const move_t move) {
 
   Position *pos = &node->pos;
@@ -127,27 +103,37 @@ void make_move(Node *node, const move_t move) {
     }
 
     else if (flags & MOVE_FLAG_CASTLE) {
-      const int rf = rook_from[to];
-      const int rt = rook_to[to];
-      const uint64_t rf_bb = 1ULL << rf;
-      const uint64_t rt_bb = 1ULL << rt;
-      const uint64_t rook_bb = rf_bb ^ rt_bb;
-      const int rook_piece = board[rf];
+      // In Chess960 encoding, 'from' is King, 'to' is Rook
+      const int k_to = (to > from) ? G1 + (stm * 56) : C1 + (stm * 56);
+      const int r_to = (to > from) ? F1 + (stm * 56) : D1 + (stm * 56);
+      
+      const int king_piece = board[from];
+      const int rook_piece = board[to];
+
+      // 1. Remove pieces from their start squares FIRST (avoids overlap bugs)
       board[from] = EMPTY;
-      board[to] = from_piece;
-      board[rf] = EMPTY;
-      board[rt] = rook_piece;
-      all[from_piece] ^= move_bb;
-      all[rook_piece] ^= rook_bb;
-      colour[stm] ^= move_bb ^ rook_bb;
-      hash ^= zob_pieces[from_piece][to] ^ zob_pieces[rook_piece][rf] ^ zob_pieces[rook_piece][rt];
+      board[to] = EMPTY;
+      all[king_piece] ^= (1ULL << from);
+      all[rook_piece] ^= (1ULL << to);
+      colour[stm] ^= ((1ULL << from) | (1ULL << to));
+      
+      // 2. Place pieces on their final squares
+      board[k_to] = king_piece;
+      board[r_to] = rook_piece;
+      all[king_piece] ^= (1ULL << k_to);
+      all[rook_piece] ^= (1ULL << r_to);
+      colour[stm] ^= ((1ULL << k_to) | (1ULL << r_to));
+
+      hash ^= zob_pieces[king_piece][from] ^ zob_pieces[king_piece][k_to] 
+            ^ zob_pieces[rook_piece][to] ^ zob_pieces[rook_piece][r_to];
+
       node->net_deferred.type = NET_OP_CASTLE;
-      nd_args[0] = from_piece;
+      nd_args[0] = king_piece;
       nd_args[1] = from;
-      nd_args[2] = to;
+      nd_args[2] = k_to;
       nd_args[3] = rook_piece;
-      nd_args[4] = rf;
-      nd_args[5] = rt;
+      nd_args[4] = to;
+      nd_args[5] = r_to;
     }
 
     else {
@@ -182,7 +168,14 @@ void make_move(Node *node, const move_t move) {
     nd_args[2] = to;
   }
 
-  pos->rights &= rights_mask[from] & rights_mask[to];
+  if (from_piece == WKING) pos->rights &= ~(WHITE_RIGHTS_KING | WHITE_RIGHTS_QUEEN);
+  if (from_piece == BKING) pos->rights &= ~(BLACK_RIGHTS_KING | BLACK_RIGHTS_QUEEN);
+  
+  if (from == pos->castling_rook_sq[WHITE][0] || to == pos->castling_rook_sq[WHITE][0]) pos->rights &= ~WHITE_RIGHTS_KING;
+  if (from == pos->castling_rook_sq[WHITE][1] || to == pos->castling_rook_sq[WHITE][1]) pos->rights &= ~WHITE_RIGHTS_QUEEN;
+  if (from == pos->castling_rook_sq[BLACK][0] || to == pos->castling_rook_sq[BLACK][0]) pos->rights &= ~BLACK_RIGHTS_KING;
+  if (from == pos->castling_rook_sq[BLACK][1] || to == pos->castling_rook_sq[BLACK][1]) pos->rights &= ~BLACK_RIGHTS_QUEEN;
+  // ==========================================
   pos->occupied = colour[WHITE] | colour[BLACK];
   pos->stm = opp;
   pos->hash = hash ^ zob_rights[pos->rights] ^ zob_ep[pos->ep] ^ zob_stm[1];
